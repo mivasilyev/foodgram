@@ -1,0 +1,29 @@
+from django.urls import include, path, re_path
+from rest_framework.routers import SimpleRouter
+
+from api.views import TagViewSet, RecipeViewSet
+
+router = SimpleRouter()
+
+router.register('tags', TagViewSet)
+router.register('recipes', RecipeViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+    path('', include('djoser.urls')),
+    re_path(r'^auth/', include('djoser.urls.authtoken')),
+]
+
+# Работает:
+# POST   /api/users/  создать пользователя
+# POST   /api/auth/token/login/  получить токен авторизации
+# POST   /api/auth/token/logout/ удалить токен
+# GET    /api/users/me/ профиль текущего пользователя
+# POST   /api/users/set_password/ изменение пароля текущего пользователя
+
+# Не работает:
+# PUT    /api/users/me/avatar/ добавление аватара
+# DELETE /api/users/me/avatar/ удаление аватара
+
+# GET    /api/users/  список пользователей
+# GET    /api/users/{id}/  профиль пользователя
