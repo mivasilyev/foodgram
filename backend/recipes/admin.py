@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from recipes.models import (Bookmark, Ingredient, Recipe, IngredientRecipe,
-                            RecipeTag, Tag)
+from recipes.models import Bookmark, Ingredient, Recipe, IngredientRecipe, Tag
 
 # @admin.register(MyUser)
 # class UsersUserAdmin(UserAdmin):
