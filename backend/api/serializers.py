@@ -2,30 +2,10 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
 from recipes.models import (Ingredient, Recipe, IngredientRecipe,
-                            Tag, User)
-
-
-class CustomUserCreateSerializer(UserCreateSerializer):
-    """Сериализатор djoser для создания новых пользователей с доп. полями."""
-
-    class Meta:
-        model = User
-        fields = (
-            'email', 'id', 'username', 'first_name', 'last_name', 'password')
-
-
-class CustomUserSerializer(UserSerializer):
-
-    class Meta:
-        model = User
-        fields = (
-            'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'avatar'
-        )
+                            Tag)
 
 
 class Base64ImageField(serializers.ImageField):
@@ -152,7 +132,6 @@ class RecipeSerializer(serializers.ModelSerializer):
     #     return instance
 
 
-
 # {
 #   "ingredients": [
 #     {
@@ -169,3 +148,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 #   "text": "string",
 #   "cooking_time": 1
 # }
+
+
+# class FavoriteSerializer(serializers.ModelSerializer):
+#     """Сериализатор для добавления в избранное."""
+
+#     class Meta:
+#         model = Favorite
+#         fields = ('id', 'user', 'recipe')
+
+#     def create(self, validated_data):
+#         print(validated_data)
+
+#         # favorite = Favorite(**validated_data)
+#         # favorite.save()
+#         # return d

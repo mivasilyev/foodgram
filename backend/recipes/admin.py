@@ -1,7 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+# from django.contrib.auth.admin import UserAdmin
 
-from recipes.models import Bookmark, Ingredient, Recipe, IngredientRecipe, Tag
+from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
 
 # @admin.register(MyUser)
 # class UsersUserAdmin(UserAdmin):
@@ -145,4 +145,3 @@ class IngredientAdmin(admin.ModelAdmin):
 #     list_display = ('review_id', 'author', 'text', 'pub_date')
 #     list_display_links = ('text',)
 #     list_filter = ('author',)
-
