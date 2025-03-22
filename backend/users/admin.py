@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from users.models import Follow, MyUser
+from users.models import Subscribe, MyUser
 
 
 @admin.register(MyUser)
@@ -17,9 +17,9 @@ class UsersUserAdmin(UserAdmin):
     list_filter = UserAdmin.list_filter + ('first_name',)
 
 
-@admin.register(Follow)
-class FollowUserAdmin(admin.ModelAdmin):
-    """Админка для подписок."""
+# @admin.register(Subscribe)
+# class SubscribeUserAdmin(admin.ModelAdmin):
+#     """Админка для подписок."""
 
-    list_display = ('user', 'following')
-    search_fields = ('user', 'following')
+#     list_display = ('user', 'following')
+#     search_fields = ('user', 'following')

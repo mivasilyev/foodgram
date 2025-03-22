@@ -19,13 +19,11 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class TagSerializer(serializers.Serializer):
-
-    # id = serializers.IntegerField()
+class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'slug', 'recipes')
+        fields = ('id', 'name', 'slug')
 
 
 # class IngredientSerializer(serializers.ModelSerializer):

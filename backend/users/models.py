@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# from recipes.models import Recipe
+from constants import default_user_avatar
 
 
 class MyUser(AbstractUser):
@@ -15,27 +15,36 @@ class MyUser(AbstractUser):
     )
     first_name = models.CharField(verbose_name='Имя', max_length=150)
     last_name = models.CharField(verbose_name='Фамилия', max_length=150)
-    is_subscribed = models.BooleanField(null=True, default=0)
-    avatar = models.ImageField(
-        verbose_name='Аватар', upload_to='user_avatars', blank=True
+    is_subscribed = models.ManyToManyField(
+        'self',
+        through='Subscribe',
+        verbose_name='Подписки',
+        symmetrical=False,
+        blank=True
     )
+    avatar = models.ImageField(
+        verbose_name='Аватар', upload_to='user_avatars',
+        default=default_user_avatar
+    )
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'avatar',]
+    USERNAME_FIELD = 'email'
 
     class Meta:
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
 
-    @property
-    def is_admin(self):
-        return self.is_staff
+    # @property
+    # def is_admin(self):
+    #     return self.is_staff
 
 
-class Follow(models.Model):
+class Subscribe(models.Model):
     """Модель подписки пользователей друг на друга."""
 
     user = models.ForeignKey(
         MyUser, on_delete=models.CASCADE,
         related_name='follower', verbose_name='Пользователь')
-    following = models.ForeignKey(
+    subscribed = models.ForeignKey(
         MyUser, on_delete=models.CASCADE,
         related_name='following', verbose_name='Подписан'
     )
@@ -46,12 +55,12 @@ class Follow(models.Model):
         constraints = [
             # Запрещена повторная подписка.
             models.UniqueConstraint(
-                fields=['user', 'following'],
+                fields=['user', 'subscribed'],
                 name='unique_subscription'
             ),
             # Запрещена подписка на себя.
             models.CheckConstraint(
-                check=~models.Q(user=models.F('following')),
+                check=~models.Q(user=models.F('subscribed')),
                 name='self_subscription'
             )
         ]

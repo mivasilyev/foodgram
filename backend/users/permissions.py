@@ -1,0 +1,12 @@
+from rest_framework import permissions
+from djoser.permissions import CurrentUserOrAdminOrReadOnly
+
+
+class CustomUserPermission(CurrentUserOrAdminOrReadOnly):
+
+    def has_permission(self, request, view):
+        return (
+            request.method in permissions.SAFE_METHODS
+            and 'users/me/' not in request.path
+            or request.user.is_authenticated
+        )

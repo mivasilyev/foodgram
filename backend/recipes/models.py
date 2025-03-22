@@ -59,19 +59,27 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientRecipe'
-        # through_fields=('ingredient', 'recipe'),
     )
     tags = models.ManyToManyField(Tag)
     cooking_time = models.SmallIntegerField(verbose_name='Время приготовления')
     favorite = models.ManyToManyField(User, related_name='favorite')
+    pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         default_related_name = 'recipes'
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.name
+
+    # @property
+    # def get_short(self):
+    #     """Возвращаем короткую ссылку на рецепт."""
+    #     if self.avatar:
+    #         return self.avatar.url
+    #     return f'https://ui-avatars.com/api/?size=190&background=random&name={self.slug}'
 
 
 class IngredientRecipe(models.Model):

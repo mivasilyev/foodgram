@@ -2,6 +2,8 @@ MAX_USERNAME_LENGTH = 150
 FORBIDDEN_NAMES = ['me',]
 USERNAME_PATTERN = r'^[\w.@+-]+\Z'
 
+default_user_avatar = 'frontend.build.static.media/userpic-icon.2e3faa821bb5398be2c6.jpg'
+
 # ROLE_MAX_LENTH = 9
 # NUMBER_WORDS = 5
 
