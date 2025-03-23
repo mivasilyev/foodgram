@@ -62,7 +62,13 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(Tag)
     cooking_time = models.SmallIntegerField(verbose_name='Время приготовления')
-    favorite = models.ManyToManyField(User, related_name='favorite')
+    is_favorited = models.ManyToManyField(
+        User, through='Favorite', related_name='is_favorited', blank=True
+    )
+    is_in_shopping_cart = models.ManyToManyField(
+        User, through='ShoppingCart', related_name='is_in_shopping_cart',
+        blank=True
+    )
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -123,58 +129,58 @@ class IngredientRecipe(models.Model):
 #         return f'{self.recipe.title} - {self.tag.name}'
 
 
-# class Favorite(models.Model):
-#     """Добавление рецептов в избранное."""
+class Favorite(models.Model):
+    """Добавление рецептов в избранное."""
 
-#     user = models.ForeignKey(
-#         User,
-#         on_delete=models.CASCADE,
-#         verbose_name='Пользователь'
-#     )
-#     recipe = models.ForeignKey(
-#         Recipe,
-#         on_delete=models.CASCADE,
-#         verbose_name='Избранное'
-#     )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name='Избранное'
+    )
 
-#     class Meta:
-#         verbose_name = 'избранное'
-#         verbose_name_plural = 'Избранное'
-#         default_related_name = 'favorite'
-#         constraints = [
-#             # Запрещено повторное добавление в избранное.
-#             models.UniqueConstraint(
-#                 fields=['user', 'recipe'],
-#                 name='unique_favorite'
-#             )
-#         ]
+    class Meta:
+        verbose_name = 'избранное'
+        verbose_name_plural = 'Избранное'
+        default_related_name = 'favorite'
+        constraints = [
+            # Запрещено повторное добавление в избранное.
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
+        ]
 
-#     def __str__(self):
-#         return f'{self.user.username} - {self.recipe.title}'
+    def __str__(self):
+        return f'{self.user.username} - {self.recipe.title}'
 
 
-# class ShoppingCart(models.Model):
-#     """Добавление рецептов в список покупок."""
+class ShoppingCart(models.Model):
+    """Добавление рецептов в список покупок."""
 
-#     user = models.ForeignKey(
-#         User, on_delete=models.CASCADE,
-#         related_name='cart', verbose_name='Пользователь')
-#     in_cart = models.ForeignKey(
-#         Recipe, on_delete=models.CASCADE,
-#         related_name='cart', verbose_name='Корзина'
-#     )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='cart', verbose_name='Пользователь')
+    in_cart = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        related_name='cart', verbose_name='Корзина'
+    )
 
-#     class Meta:
-#         verbose_name = 'корзина'
-#         verbose_name_plural = 'Корзины'
-#         default_related_name = 'in_cart'
-#         constraints = [
-#             # Запрещено повторное добавление в корзину.
-#             models.UniqueConstraint(
-#                 fields=['user', 'in_cart'],
-#                 name='unique_in_cart'
-#             )
-#         ]
+    class Meta:
+        verbose_name = 'корзина'
+        verbose_name_plural = 'Корзины'
+        default_related_name = 'shopping_cart'
+        constraints = [
+            # Запрещено повторное добавление в корзину.
+            models.UniqueConstraint(
+                fields=['user', 'in_cart'],
+                name='unique_in_cart'
+            )
+        ]
 
-#     def __str__(self):
-#         return f'{self.user.username} - {self.in_cart.title}'
+    def __str__(self):
+        return f'{self.user.username} - {self.in_cart.title}'

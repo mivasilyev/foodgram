@@ -1,11 +1,18 @@
-from api.serializers import RecipeSerializer, TagSerializer
 from django.shortcuts import get_object_or_404
-from recipes.models import Recipe, Tag, User
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+# from rest_framework.filters import SearchFilter
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
+from api.pagination import CustomPagination
+from api.serializers import (GetRecipeSerializer, IngredientSerializer,
+                             RecipeSerializer, TagSerializer)
+from recipes.models import Ingredient, Recipe, Tag, User
+from users.permissions import CustomUserPermission
 from users.serializers import CustomUserSerializer
 
 
@@ -17,43 +24,67 @@ class TagViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
 
+class IngredientViewSet(ReadOnlyModelViewSet):
+
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = None
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name',)
+
+
 class RecipeViewSet(ModelViewSet):
 
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
+    def get_serializer(self, *args, **kwargs):
+        if self.action == 'list':
+            return GetRecipeSerializer
+        return RecipeSerializer
+
     def perform_create(self, serializer):
+        print(serializer)
         serializer.save(author=self.request.user)
 
 
-class FavoriteAPIView(APIView):
-    """Класс для сохранения и удаления рецепта в избранное."""
+class RecipeAPIView(APIView):
+    """Рецепты."""
 
-    def post(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        recipe.favorite.add(user)
-        return Response(status=status.HTTP_201_CREATED)
+    permission_classes = (CustomUserPermission,)
 
-    def delete(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        recipe.favorite.remove(user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def post(self, request):
+        """Публикация рецепта."""
+        # author = self.request.user
+        serializer = RecipeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # serializer = FavoriteSerializer(data=request.data)
-        # if serializer.is_valid():
-        #     serializer.save(author=self.request.user)
-        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        """Получение рецептов."""
+        recipes = Recipe.objects.all()
+        paginator = LimitOffsetPagination()
+        result_page = paginator.paginate_queryset(recipes, request)
+        serializer = GetRecipeSerializer(
+            result_page, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # def get(self, request):
-    #     cats = Cat.objects.all()
-    #     serializer = CatSerializer(cats, many=True)
-    #     return Response(serializer.data)
 
-# Получение рецепта:
+# def get(self, request, pk, format=None):
+
+#     #user = request.user
+#     event = Event.objects.get(pk=pk)
+#     news = event.get_news_items().all()
+#     paginator = LimitOffsetPagination()
+#     result_page = paginator.paginate_queryset(news, request)
+#     serializer = NewsItemSerializer(result_page, many=True, context={'request':request})
+#     response = Response(serializer.data, status=status.HTTP_200_OK)
+#     return response
+
 # {
 #   "id": 0,
 #   "tags": [
@@ -87,6 +118,34 @@ class FavoriteAPIView(APIView):
 #   "text": "string",
 #   "cooking_time": 1
 # }
+
+
+class FavoriteAPIView(APIView):
+    """Класс для сохранения и удаления рецепта в избранное."""
+
+    def post(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        recipe.is_favorited.add(self.request.user)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        recipe.is_favorited.remove(self.request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ShoppingCartAPIView(APIView):
+    """Класс для сохранения и удаления рецепта в корзину."""
+
+    def post(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        recipe.is_in_shopping_cart.add(self.request.user)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        recipe.is_in_shopping_cart.remove(self.request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserSubscriptionView(APIView):

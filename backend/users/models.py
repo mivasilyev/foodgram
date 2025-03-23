@@ -26,7 +26,7 @@ class MyUser(AbstractUser):
         verbose_name='Аватар', upload_to='user_avatars',
         default=default_user_avatar
     )
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'avatar',]
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name',]  # 'avatar',
     USERNAME_FIELD = 'email'
 
     class Meta:
