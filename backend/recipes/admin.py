@@ -23,7 +23,7 @@ class TagAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для рецептов."""
 
-    list_display = ('author', 'name',)
+    list_display = ('author', 'name', 'text')
     search_fields = ('author', 'name',)
     # list_filter = ('tag',)
 # в списке рецептов вывести название и имя автора рецепта;

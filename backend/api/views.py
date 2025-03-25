@@ -9,8 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.pagination import CustomPagination
-from api.serializers import (GetRecipeSerializer, IngredientSerializer,
-                             RecipeSerializer, TagSerializer)
+from api.serializers import (GetRecipeSerializer,  # IngredientsSerializer,
+                             IngredientSerializer, RecipeSerializer,
+                             TagSerializer)
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import CustomUserPermission
 from users.serializers import CustomUserSerializer
@@ -39,14 +40,16 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('author', 'tags',)
 
-    def get_serializer(self, *args, **kwargs):
-        if self.action == 'list':
+    def get_serializer_class(self, *args, **kwargs):
+        print(self.action)
+        if self.action in ['list', 'retrieve']:
             return GetRecipeSerializer
         return RecipeSerializer
 
     def perform_create(self, serializer):
-        print(serializer)
         serializer.save(author=self.request.user)
 
 
@@ -57,7 +60,6 @@ class RecipeAPIView(APIView):
 
     def post(self, request):
         """Публикация рецепта."""
-        # author = self.request.user
         serializer = RecipeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=self.request.user)
