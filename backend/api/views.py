@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 # from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
@@ -9,9 +10,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.pagination import CustomPagination
-from api.serializers import (GetRecipeSerializer,  # IngredientsSerializer,
+from api.serializers import (GetRecipeSerializer,  # ShortLinkSerializer,
                              IngredientSerializer, RecipeSerializer,
                              TagSerializer)
+from constants import SHORT_LINK_PREFIX
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import CustomUserPermission
 from users.serializers import CustomUserSerializer
@@ -44,27 +46,42 @@ class RecipeViewSet(ModelViewSet):
     filterset_fields = ('author', 'tags',)
 
     def get_serializer_class(self, *args, **kwargs):
-        print(self.action)
         if self.action in ['list', 'retrieve']:
             return GetRecipeSerializer
         return RecipeSerializer
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        return serializer.save(author=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = self.perform_create(serializer)
+        instance_serializer = GetRecipeSerializer(instance)
+        return Response(
+            instance_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ShortLinkAPIView(APIView):
+    """Получение короткой ссылки."""
+
+    permission_classes = (AllowAny,)
+
+    def get(self, request, id):
+        recipe = get_object_or_404(Recipe, id=id)
+        # serializer = ShortLinkSerializer(recipe)
+        # short_l = recipe.short_link  # serializer.data['short_link']
+        response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
+        print(response)
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class RecipeAPIView(APIView):
     """Рецепты."""
 
     permission_classes = (CustomUserPermission,)
-
-    def post(self, request):
-        """Публикация рецепта."""
-        serializer = RecipeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         """Получение рецептов."""
@@ -74,6 +91,14 @@ class RecipeAPIView(APIView):
         serializer = GetRecipeSerializer(
             result_page, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Публикация рецепта."""
+        serializer = RecipeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # def get(self, request, pk, format=None):

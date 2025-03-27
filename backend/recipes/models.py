@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 # from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 # from django.utils.text import Truncator
+from constants import SHORT_LINK_LENGTH
 
 User = get_user_model()
 
@@ -56,10 +57,10 @@ class Recipe(models.Model):
         blank=True, upload_to='recipe_images', verbose_name='Изображение'
     )
     text = models.TextField(verbose_name='Описание')
-    ingredients = models.ManyToManyField(
-        Ingredient,
-        through='IngredientRecipe'
-    )
+    # ingredients = models.ManyToManyField(
+    #     Ingredient,
+    #     through='IngredientRecipe'
+    # )
     tags = models.ManyToManyField(Tag)
     cooking_time = models.SmallIntegerField(verbose_name='Время приготовления')
     is_favorited = models.ManyToManyField(
@@ -70,6 +71,7 @@ class Recipe(models.Model):
         blank=True
     )
     pub_date = models.DateTimeField(auto_now_add=True)
+    short_link = models.CharField(max_length=SHORT_LINK_LENGTH, unique=True)
 
     class Meta:
         default_related_name = 'recipes'
@@ -80,24 +82,18 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
-    # @property
-    # def get_short(self):
-    #     """Возвращаем короткую ссылку на рецепт."""
-    #     if self.avatar:
-    #         return self.avatar.url
-    #     return f'https://ui-avatars.com/api/?size=190&background=random&name={self.slug}'
 
-
-class IngredientRecipe(models.Model):
+class Ingredients(models.Model):
     """Ингредиенты в рецепте."""
 
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    amount = models.FloatField(default=0)  # blank=True, null=True
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    amount = models.FloatField()
 
     class Meta:
         verbose_name = 'ингредиенты в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
+        default_related_name = 'ingredients'
         constraints = [
             # Ингредиент входит в рецепт один раз.
             models.UniqueConstraint(
@@ -107,7 +103,7 @@ class IngredientRecipe(models.Model):
         ]
 
     def __str__(self):
-        return self.amount
+        return f'{self.recipe} - {self.amount}'
 
 
 # class TagRecipe(models.Model):
