@@ -1,25 +1,25 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.decorators import action
+# from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 # from rest_framework.filters import SearchFilter
-from rest_framework.pagination import LimitOffsetPagination
+# from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.pagination import CustomPagination
-from api.serializers import (GetRecipeSerializer,  # ShortLinkSerializer,
-                             IngredientSerializer, RecipeSerializer,
-                             TagSerializer)
+from api.serializers import GetRecipeSerializer  # ShortLinkSerializer,
+from api.serializers import (IngredientSerializer, RecipeSerializer,
+                             SubscribeUserSerializer, TagSerializer)
 from constants import SHORT_LINK_PREFIX
 from recipes.models import Ingredient, Recipe, Tag, User
-from users.permissions import CustomUserPermission
+from users.permissions import IsAuthorOrReadOnly
 from users.serializers import CustomUserSerializer
 
 
 class TagViewSet(ReadOnlyModelViewSet):
+    """Вьюсет для получения тегов."""
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -28,24 +28,27 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
+    """Вьюсет для получения ингредиентов."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    filterset_fields = ('name',)  # 'slug')
 
 
 class RecipeViewSet(ModelViewSet):
+    """Вьюсет рецептов."""
 
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags',)
+    filterset_fields = ('author', 'tags__name', 'tags__slug')
 
     def get_serializer_class(self, *args, **kwargs):
+        # Для показа рецептов используем отдельный сериализатор.
         if self.action in ['list', 'retrieve']:
             return GetRecipeSerializer
         return RecipeSerializer
@@ -57,10 +60,26 @@ class RecipeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer)
+        # После сохранения рецепта возвращаем объект другим сериализатором.
         instance_serializer = GetRecipeSerializer(instance)
         return Response(
             instance_serializer.data,
             status=status.HTTP_201_CREATED
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        # После сохранения рецепта возвращаем объект другим сериализатором.
+        instance_serializer = GetRecipeSerializer(instance)
+        return Response(
+            instance_serializer.data,
+            status=status.HTTP_200_OK
         )
 
 
@@ -78,27 +97,27 @@ class ShortLinkAPIView(APIView):
         return Response(response, status=status.HTTP_200_OK)
 
 
-class RecipeAPIView(APIView):
-    """Рецепты."""
+# class RecipeAPIView(APIView):
+#     """Рецепты."""
 
-    permission_classes = (CustomUserPermission,)
+#     permission_classes = (CustomUserPermission,)
 
-    def get(self, request):
-        """Получение рецептов."""
-        recipes = Recipe.objects.all()
-        paginator = LimitOffsetPagination()
-        result_page = paginator.paginate_queryset(recipes, request)
-        serializer = GetRecipeSerializer(
-            result_page, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+#     def get(self, request):
+#         """Получение рецептов."""
+#         recipes = Recipe.objects.all()
+#         paginator = LimitOffsetPagination()
+#         result_page = paginator.paginate_queryset(recipes, request)
+#         serializer = GetRecipeSerializer(
+#             result_page, many=True, context={'request': request})
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        """Публикация рецепта."""
-        serializer = RecipeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request):
+#         """Публикация рецепта."""
+#         serializer = RecipeSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(author=self.request.user)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # def get(self, request, pk, format=None):
@@ -111,40 +130,6 @@ class RecipeAPIView(APIView):
 #     serializer = NewsItemSerializer(result_page, many=True, context={'request':request})
 #     response = Response(serializer.data, status=status.HTTP_200_OK)
 #     return response
-
-# {
-#   "id": 0,
-#   "tags": [
-#     {
-#       "id": 0,
-#       "name": "Завтрак",
-#       "slug": "breakfast"
-#     }
-#   ],
-#   "author": {
-#     "email": "user@example.com",
-#     "id": 0,
-#     "username": "string",
-#     "first_name": "Вася",
-#     "last_name": "Иванов",
-#     "is_subscribed": false,
-#     "avatar": "http://foodgram.example.org/media/users/image.png"
-#   },
-#   "ingredients": [
-#     {
-#       "id": 0,
-#       "name": "Картофель отварной",
-#       "measurement_unit": "г",
-#       "amount": 1
-#     }
-#   ],
-#   "is_favorited": true,
-#   "is_in_shopping_cart": true,
-#   "name": "string",
-#   "image": "http://foodgram.example.org/media/recipes/images/image.png",
-#   "text": "string",
-#   "cooking_time": 1
-# }
 
 
 class FavoriteAPIView(APIView):
@@ -190,36 +175,14 @@ class UserSubscriptionView(APIView):
         user = self.request.user
         subscribe = get_object_or_404(User, id=id)
         user.is_subscribed.add(subscribe)
-        subscribed = True if subscribe in user.is_subscribed.all() else False
-        data = {
-            'email': subscribe.email,
-            'id': subscribe.id,
-            'username': subscribe.username,
-            'first_name': subscribe.first_name,
-            'last_name': subscribe.last_name,
-            'is_subscribed': subscribed,
-            'avatar': subscribe.avatar
-        }
-        return Response(data=data, status=status.HTTP_201_CREATED)
-
-# {
-#   "email": "user@example.com",
-#   "id": 0,
-#   "username": "string",
-#   "first_name": "Вася",
-#   "last_name": "Иванов",
-#   "is_subscribed": true,
-#   "recipes": [
-#     {
-#       "id": 0,
-#       "name": "string",
-#       "image": "http://foodgram.example.org/media/recipes/images/image.png",
-#       "cooking_time": 1
-#     }
-#   ],
-#   "recipes_count": 0,
-#   "avatar": "http://foodgram.example.org/media/users/image.png"
-# }
+        serializer = SubscribeUserSerializer(
+            subscribe,
+            context={'request': request}
+        )
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
     def delete(self, request, id):
         """Удалить подписку на пользователя."""

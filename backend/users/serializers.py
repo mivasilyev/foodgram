@@ -8,6 +8,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
 from constants import FORBIDDEN_NAMES, MAX_USERNAME_LENGTH, USERNAME_PATTERN
+# from api.serializers import BaseRecipeSerializer
 
 User = get_user_model()
 
@@ -66,5 +67,19 @@ class CustomUserSerializer(UserSerializer):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return True if obj in user.is_subscribed.all() else False
+                # return True if obj in user.is_subscribed.all() else False
+                return obj in user.is_subscribed.all()
         return False
+
+
+# class ExtendedUserSerializer(CustomUserSerializer):
+
+#     recipes = BaseRecipeSerializer()
+#     # recipes_count = 
+
+#     class Meta:
+#         model = User
+#         fields = (
+#             'email', 'id', 'username', 'first_name', 'last_name',
+#             'is_subscribed', 'avatar',  # 'recipes', 'recipes_count'
+#         )
