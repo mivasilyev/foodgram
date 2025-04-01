@@ -1,21 +1,67 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
-# from rest_framework.decorators import action
+from djoser.views import UserViewSet
+from rest_framework import generics, mixins, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
-# from rest_framework.filters import SearchFilter
-# from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.serializers import GetRecipeSerializer  # ShortLinkSerializer,
+from api.pagination import CustomRecipePagination
+from api.serializers import GetRecipeSerializer
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
 from constants import SHORT_LINK_PREFIX
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import IsAuthorOrReadOnly
 from users.serializers import CustomUserSerializer
+
+
+class CustomUserViewSet(UserViewSet):
+
+    @action(["post", "delete"], detail=True)
+    def subscribe(self, request, *args, **kwargs):
+        user = self.request.user
+        to_user = get_object_or_404(User, id=kwargs.get('id'))
+
+        if request.method == 'POST':
+            # Проверка на самоподписку и повторную подписку.
+            if (
+                to_user == user
+                or to_user in user.is_subscribed.all()
+            ):
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            user.is_subscribed.add(to_user)
+            serializer = SubscribeUserSerializer(
+                to_user,
+                context={'request': request}
+            )
+            if to_user in user.is_subscribed.all():
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+        elif request.method == 'DELETE':
+            user.is_subscribed.remove(to_user)
+            if to_user not in user.is_subscribed.all():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(["get"], detail=False)
+    def subscriptions(self, request, *args, **kwargs):
+        """Список юзеров, на которых подписан автор запроса, (с рецептами)."""
+        user = self.request.user
+        queryset = user.is_subscribed.all()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = SubscribeUserSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = SubscribeUserSerializer(
+            queryset, many=True, context={'request': request}
+        )
+        return Response(serializer.data)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -35,7 +81,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     permission_classes = (AllowAny,)
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)  # 'slug')
+    filterset_fields = ('name',)
 
 
 class RecipeViewSet(ModelViewSet):
@@ -45,7 +91,7 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags__name', 'tags__slug')
+    filterset_fields = ('author', 'tags__slug')
 
     def get_serializer_class(self, *args, **kwargs):
         # Для показа рецептов используем отдельный сериализатор.
@@ -160,37 +206,68 @@ class ShoppingCartAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserSubscriptionView(APIView):
-    """Подписки пользователей."""
+# class UserSubscriptionViewSet(ModelViewSet):
+#     """Подписки пользователей."""
 
-    # def get():
-    #     """
-    #     Возвращает пользователей, на которых подписан текущий пользователь.
-    #     В выдачу добавляются рецепты.
-    #     """
-    #     pass
+#     queryset = User.objects.all()
+#     serializer_class = SubscribeUserSerializer
+#     permission_classes = (IsAuthenticatedOrReadOnly,)
+#     http_method_names = ['get', 'post', 'delete']
+#     # filter_backends = (DjangoFilterBackend,)
+#     # filterset_fields = ('author', 'tags__slug')  # 'tags__name'
 
-    def post(self, request, id):
-        """Подписаться на пользователя."""
-        user = self.request.user
-        subscribe = get_object_or_404(User, id=id)
-        user.is_subscribed.add(subscribe)
-        serializer = SubscribeUserSerializer(
-            subscribe,
-            context={'request': request}
-        )
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED
-        )
+#     def perform_create(self, serializer):
+#         print(self.request, serializer)
+#         return super().perform_create(serializer)
 
-    def delete(self, request, id):
-        """Удалить подписку на пользователя."""
-        user = self.request.user
-        unsubscribe = get_object_or_404(User, id=id)
-        user.is_subscribed.remove(unsubscribe)
-        if unsubscribe not in user.is_subscribed.all():
-            return Response(status=status.HTTP_204_NO_CONTENT)
+
+# class UserSubscriptionViewSet(mixins.CreateModelMixin,
+#                               #   mixins.ListModelMixin,
+#                               #   mixins.DestroyModelMixin,
+#                               #   mixins.RetrieveModelMixin,
+#                               #   mixins.UpdateModelMixin,
+#                               GenericViewSet):
+
+#     queryset = User.objects.all()
+#     serializer_class = SubscribeUserSerializer
+
+
+#     def perform_create(self, serializer):
+#         print('===perform_create')
+#         return super().perform_create(serializer)
+
+
+# class UserSubscriptionView(APIView):
+#     """Подписки пользователей."""
+
+#     # def get():
+#     #     """
+#     #     Возвращает пользователей, на которых подписан текущий пользователь.
+#     #     В выдачу добавляются рецепты.
+#     #     """
+#     #     pass
+
+#     def post(self, request, id):
+#         """Подписаться на пользователя."""
+#         user = self.request.user
+#         subscribe = get_object_or_404(User, id=id)
+#         user.is_subscribed.add(subscribe)
+#         serializer = SubscribeUserSerializer(
+#             subscribe,
+#             context={'request': request}
+#         )
+#         return Response(
+#             serializer.data,
+#             status=status.HTTP_201_CREATED
+#         )
+
+#     def delete(self, request, id):
+#         """Удалить подписку на пользователя."""
+#         user = self.request.user
+#         unsubscribe = get_object_or_404(User, id=id)
+#         user.is_subscribed.remove(unsubscribe)
+#         if unsubscribe not in user.is_subscribed.all():
+#             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AvatarAPIView(APIView):

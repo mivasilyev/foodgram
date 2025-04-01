@@ -5,6 +5,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
+from api.pagination import CustomRecipePagination
 from recipes.models import (Ingredient, Recipe, Ingredients, User,
                             Tag)
 from users.serializers import CustomUserSerializer
@@ -30,14 +31,6 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'slug')
         read_only_fields = ('name', 'slug')
 
-    # def to_representation(self, instance):
-    #     return super().to_representation(instance)
-
-    # def to_internal_value(self, data):
-    #     ret = get_object_or_404(Tag, id=data)
-    #     # return super().to_internal_value(data)
-    #     return super().to_internal_value({'tag': ret})
-
 
 class IngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов."""
@@ -48,19 +41,19 @@ class IngredientSerializer(serializers.ModelSerializer):
         read_only_fields = ('measurement_unit', 'name')
 
 
-class IngredientRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для связи ингредиентов и рецептов."""
+# class IngredientRecipeSerializer(serializers.ModelSerializer):
+#     """Сериализатор для связи ингредиентов и рецептов."""
 
-    id = serializers.IntegerField(source='ingredient.id')
-    name = serializers.CharField(source='ingredient.name')
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit'
-    )
+#     id = serializers.IntegerField(source='ingredient.id')
+#     name = serializers.CharField(source='ingredient.name')
+#     measurement_unit = serializers.CharField(
+#         source='ingredient.measurement_unit'
+#     )
 
-    class Meta:
-        model = Ingredients
-        fields = ('id', 'name', 'measurement_unit', 'amount')
-        read_only_fields = ('name', 'measurement_unit')
+#     class Meta:
+#         model = Ingredients
+#         fields = ('id', 'name', 'measurement_unit', 'amount')
+#         read_only_fields = ('name', 'measurement_unit')
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
@@ -73,11 +66,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredients
-        # fields = ('id', 'amount',)
         fields = ('id', 'name', 'measurement_unit', 'amount')
-
-    # def to_representation(self, instance):
-    #     return super().to_representation(instance)
 
 
 class BaseRecipeSerializer(serializers.ModelSerializer):
@@ -122,47 +111,9 @@ class GetRecipeSerializer(serializers.ModelSerializer):
         return False
 
 
-# class RecipeSerializer(serializers.ModelSerializer):
-#     """Сериализатор для рецептов."""
-
-#     ingredients = IngredientSerializer(read_only=True, many=True)
-
-#     class Meta:
-#         model = Recipe
-#         fields = ('name', 'text', 'cooking_time', 'ingredients')
-
-#     def create(self, validated_data):
-#         ingredients = validated_data.pop('ingredients')
-#         recipe = Recipe.objects.create(**validated_data)
-#         for ingredient in ingredients:
-#             current_ingredient = get_object_or_404(
-#                 Ingredient, id=ingredient.id
-#             )
-#             RecipeIngredient.objects.create(
-#                 ingredient=current_ingredient,
-#                 recipe=recipe,
-#                 amount=ingredient.amount
-#             )
-#         return recipe
-
-    # def to_representation(self, instance):
-    #     ret = super().to_representation(instance)
-    #     return ret['ingredient']
-
-
-# class IngredientsSerializer(serializers.Serializer):
-
-#     id = serializers.IntegerField()
-#     amount = serializers.FloatField()
-
-
 class RecipeSerializer(serializers.ModelSerializer):
 
-    # tags = TagSerializer(many=True)
     ingredients = IngredientsSerializer(many=True)
-    # ingredients = IngredientRecipeSerializer(
-    #     many=True, source='ingredientrecipe_set', read_only=True
-    # )
     image = Base64ImageField(required=False, allow_null=True)
     author = CustomUserSerializer(required=False)
     is_favorited = serializers.SerializerMethodField()
@@ -180,7 +131,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                # return True if obj in user.is_favorited.all() else False
                 return obj in user.is_favorited.all()
         return False
 
@@ -305,12 +255,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         new_ingredients = {}
         for ingr in validated_data.get('ingredients'):
             new_ingredients[ingr['ingredient']['id']] = ingr['amount']
-        print(new_ingredients)
         # Перезаписываем ингредиенты, которые уже были в списке.
         ingredients = instance.ingredients.all()
         for ingredient in ingredients:
             if ingredient.ingredient.id in new_ingredients:
-                ingredient.amount = new_ingredients.pop(ingredient.ingredient.id)
+                ingredient.amount = new_ingredients.pop(
+                    ingredient.ingredient.id
+                )
                 ingredient.save()
             else:
                 ingredient.delete()
@@ -341,7 +292,10 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class SubscribeUserSerializer(CustomUserSerializer):
 
-    recipes = BaseRecipeSerializer(many=True, source='author')
+    # recipes = BaseRecipeSerializer(many=True, source='author')
+    # result_set = CourseComment.objects.all()
+    # three_first = Comment(result_set[:3], many=True).data # serializer
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
 
@@ -351,6 +305,30 @@ class SubscribeUserSerializer(CustomUserSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'avatar', 'recipes', 'recipes_count'
         )
+
+    def get_recipes(self, obj):
+        # Вывод рецептов для пользователя делаем через кастомный пагинатор.
+        recipes = obj.author.all()
+        paginator = CustomRecipePagination()
+        result_page = paginator.paginate_queryset(
+            recipes, self.context['request']
+        )
+        serializer = BaseRecipeSerializer(
+            result_page,
+            many=True,
+            context={'request': self.context['request']}
+        )
+        return serializer.data
+
+# class EventSerializer(serializers.ModelSerializer):
+#     messages = serializers.SerializerMethodField('event_messages')
+#
+#     def event_messages(self, obj):
+#         messages = Message.objects.filter(event=obj)
+#         paginator = pagination.PageNumberPagination()
+#         page = paginator.paginate_queryset(messages, self.context['request'])
+#         serializer = MessageSerializer(page, many=True, context={'request': self.context['request']})
+#         return serializer.data
 
     def get_recipes_count(self, obj):
         return obj.author.count()
