@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.pagination import CustomRecipePagination
-from api.serializers import GetRecipeSerializer
+from api.serializers import GetRecipeSerializer, BaseRecipeSerializer
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
 from constants import SHORT_LINK_PREFIX
@@ -43,9 +43,11 @@ class CustomUserViewSet(UserViewSet):
                     status=status.HTTP_201_CREATED
                 )
         elif request.method == 'DELETE':
-            user.is_subscribed.remove(to_user)
-            if to_user not in user.is_subscribed.all():
-                return Response(status=status.HTTP_204_NO_CONTENT)
+            if to_user in user.is_subscribed.all():
+                user.is_subscribed.remove(to_user)
+                if to_user not in user.is_subscribed.all():
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
@@ -91,7 +93,7 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags__slug')
+    filterset_fields = ('author', 'tags__slug',)  # 'is_favorited')
 
     def get_serializer_class(self, *args, **kwargs):
         # Для показа рецептов используем отдельный сериализатор.
@@ -182,28 +184,52 @@ class FavoriteAPIView(APIView):
     """Класс для сохранения и удаления рецепта в избранное."""
 
     def post(self, request, id):
+        user = self.request.user
         recipe = get_object_or_404(Recipe, id=id)
-        recipe.is_favorited.add(self.request.user)
-        return Response(status=status.HTTP_201_CREATED)
+        if recipe not in user.is_favorited.all():
+            recipe.is_favorited.add(user)
+            if recipe in user.is_favorited.all():
+                serializer = BaseRecipeSerializer(recipe)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
+        user = self.request.user
         recipe = get_object_or_404(Recipe, id=id)
-        recipe.is_favorited.remove(self.request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if recipe in user.is_favorited.all():
+            recipe.is_favorited.remove(self.request.user)
+            if recipe not in user.is_favorited.all():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class ShoppingCartAPIView(APIView):
     """Класс для сохранения и удаления рецепта в корзину."""
 
     def post(self, request, id):
+        user = self.request.user
         recipe = get_object_or_404(Recipe, id=id)
-        recipe.is_in_shopping_cart.add(self.request.user)
-        return Response(status=status.HTTP_201_CREATED)
+        if recipe not in user.is_in_shopping_cart.all():
+            recipe.is_in_shopping_cart.add(user)
+            if recipe in user.is_in_shopping_cart.all():
+                serializer = BaseRecipeSerializer(recipe)
+                return Response(
+                    data=serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
+        user = self.request.user
         recipe = get_object_or_404(Recipe, id=id)
-        recipe.is_in_shopping_cart.remove(self.request.user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if recipe in user.is_in_shopping_cart.all():
+            recipe.is_in_shopping_cart.remove(user)
+            if recipe not in user.is_in_shopping_cart.all():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 # class UserSubscriptionViewSet(ModelViewSet):

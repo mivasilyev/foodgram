@@ -320,16 +320,6 @@ class SubscribeUserSerializer(CustomUserSerializer):
         )
         return serializer.data
 
-# class EventSerializer(serializers.ModelSerializer):
-#     messages = serializers.SerializerMethodField('event_messages')
-#
-#     def event_messages(self, obj):
-#         messages = Message.objects.filter(event=obj)
-#         paginator = pagination.PageNumberPagination()
-#         page = paginator.paginate_queryset(messages, self.context['request'])
-#         serializer = MessageSerializer(page, many=True, context={'request': self.context['request']})
-#         return serializer.data
-
     def get_recipes_count(self, obj):
         return obj.author.count()
 
