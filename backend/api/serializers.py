@@ -94,7 +94,7 @@ class GetRecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'name', 'image',
             'text', 'cooking_time', 'is_favorited', 'is_in_shopping_cart',
         )
-        read_only_fields = ('author',)
+        read_only_fields = ('author',)  # 'is_favorited', 'is_in_shopping_cart',)
 
     def get_is_favorited(self, obj):
         if self.context:
@@ -125,7 +125,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'name', 'image', 'text',
             'cooking_time', 'is_favorited', 'is_in_shopping_cart'
         )
-        read_only_fields = ('author',)
+        read_only_fields = ('author',)  # 'is_favorited', 'is_in_shopping_cart')
 
     def get_is_favorited(self, obj):
         if self.context:

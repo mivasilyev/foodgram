@@ -7,7 +7,7 @@ from rest_framework.routers import SimpleRouter
 router = SimpleRouter()
 
 router.register('tags', TagViewSet)
-router.register('recipes', RecipeViewSet)
+router.register('recipes', RecipeViewSet, basename='recipes')
 router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
 

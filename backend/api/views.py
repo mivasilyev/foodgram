@@ -1,14 +1,15 @@
+from django.db.models import Exists
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import generics, mixins, status
+from rest_framework import status  # generics, mixins,
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny  #, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.pagination import CustomRecipePagination
+# from api.pagination import CustomRecipePagination
 from api.serializers import GetRecipeSerializer, BaseRecipeSerializer
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
@@ -93,7 +94,34 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags__slug',)  # 'is_favorited')
+    filterset_fields = ('author', 'tags__slug',)  # 'is_favorited',
+                        # 'is_in_shopping_cart')
+
+    def get_queryset(self):
+        queryset = Recipe.objects.all()
+        user = self.request.user
+        if user.is_authenticated:
+            is_favorited = self.request.query_params.get('is_favorited')
+            # print(is_favorited)
+            if is_favorited:
+                # print(user.is_favorited.all())
+                return user.is_favorited.all()
+            is_in_shopping_cart = self.request.query_params.get(
+                'is_in_shopping_cart')
+            if is_in_shopping_cart:
+                return user.is_in_shopping_cart.all()
+        return queryset
+
+# def get_queryset(self):
+#         """
+#         Optionally restricts the returned purchases to a given user,
+#         by filtering against a `username` query parameter in the URL.
+#         """
+#         queryset = Purchase.objects.all()
+#         username = self.request.query_params.get('username')
+#         if username is not None:
+#             queryset = queryset.filter(purchaser__username=username)
+#         return queryset
 
     def get_serializer_class(self, *args, **kwargs):
         # Для показа рецептов используем отдельный сериализатор.
@@ -141,7 +169,7 @@ class ShortLinkAPIView(APIView):
         # serializer = ShortLinkSerializer(recipe)
         # short_l = recipe.short_link  # serializer.data['short_link']
         response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
-        print(response)
+        # print(response)
         return Response(response, status=status.HTTP_200_OK)
 
 
