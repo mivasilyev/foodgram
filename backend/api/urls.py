@@ -1,8 +1,10 @@
-from api.views import (AvatarAPIView, CustomUserViewSet, FavoriteAPIView,
-                       IngredientViewSet, RecipeViewSet, ShoppingCartAPIView,
-                       ShortLinkAPIView, TagViewSet)
 from django.urls import include, path, re_path
 from rest_framework.routers import SimpleRouter
+
+from api.views import (AvatarAPIView, CustomUserViewSet,
+                       DownloadShoppingCartView, FavoriteAPIView,
+                       IngredientViewSet, RecipeViewSet, ShoppingCartAPIView,
+                       ShortLinkAPIView, TagViewSet)
 
 router = SimpleRouter()
 
@@ -11,14 +13,20 @@ router.register('recipes', RecipeViewSet, basename='recipes')
 router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
 
+recipes_urls = [
+    path('<int:id>/favorite/', FavoriteAPIView.as_view()),
+    path('<int:id>/delete/', FavoriteAPIView.as_view()),
+    path('<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
+    path('<int:id>/get-link/', ShortLinkAPIView.as_view()),
+    path('download_shopping_cart/', DownloadShoppingCartView.as_view()),
+]
 urlpatterns = [
-    path('recipes/<int:id>/favorite/', FavoriteAPIView.as_view()),
-    path('recipes/<int:id>/delete/', FavoriteAPIView.as_view()),
-    path('recipes/<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
-    path('recipes/<int:id>/get-link/', ShortLinkAPIView.as_view()),
-
+    # path('recipes/<int:id>/favorite/', FavoriteAPIView.as_view()),
+    # path('recipes/<int:id>/delete/', FavoriteAPIView.as_view()),
+    # path('recipes/<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
+    # path('recipes/<int:id>/get-link/', ShortLinkAPIView.as_view()),
+    path('recipes/', include(recipes_urls)),
     path('users/me/avatar/', AvatarAPIView.as_view()),
-
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.authtoken')),

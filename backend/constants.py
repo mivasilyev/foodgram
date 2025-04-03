@@ -9,6 +9,7 @@ CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
 SHORT_LINK_LENGTH = 6
 SHORT_LINK_PREFIX = 'https://site_name.com/'
 
+shopping_cart_filename = 'shopping_cart.txt'
 
 # ROLE_MAX_LENTH = 9
 # NUMBER_WORDS = 5
