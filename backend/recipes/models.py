@@ -49,7 +49,7 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.DO_NOTHING,
-        related_name='author',
+        # related_name='author',
         verbose_name='Автор'
     )
     name = models.CharField(max_length=150, verbose_name='Название')

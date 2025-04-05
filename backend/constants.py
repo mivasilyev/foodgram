@@ -1,15 +1,21 @@
-MAX_USERNAME_LENGTH = 150
+# Максимальная длина поля.
+MAX_LENGTH = 150
+# Список запрещенных имен пользователя.
 FORBIDDEN_NAMES = ['me',]
+# Допустимый паттерн имени пользователя.
 USERNAME_PATTERN = r'^[\w.@+-]+\Z'
+# Аватар пользователя по умолчанию.
+DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
 
-# default_user_avatar = 'frontend.build.static.media/userpic-icon.2e3faa821bb5398be2c6.jpg'
-default_user_avatar = 'user_avatars/default_user_avatar.jpg'
-
+# Символы для генерации короткой ссылки.
 CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
+# Длина короткой ссылки.
 SHORT_LINK_LENGTH = 6
+# Префикс короткой ссылки.
 SHORT_LINK_PREFIX = 'https://site_name.com/'
 
-shopping_cart_filename = 'shopping_cart.txt'
+# Имя файла для выгрузки списка покупок продуктов.
+SHOPPING_CART_FILENAME = 'shopping_cart.txt'
 
 # ROLE_MAX_LENTH = 9
 # NUMBER_WORDS = 5

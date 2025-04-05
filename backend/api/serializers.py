@@ -6,11 +6,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
-from recipes.models import (Ingredient, Recipe, Ingredients, User,
-                            Tag)
-from users.serializers import CustomUserSerializer
-
 from constants import CHARACTERS, SHORT_LINK_LENGTH
+from recipes.models import Ingredient, Ingredients, Recipe, Tag, User
+from users.serializers import CustomUserSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -25,6 +23,7 @@ class Base64ImageField(serializers.ImageField):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор для тегов."""
 
     class Meta:
         model = Tag
@@ -41,22 +40,8 @@ class IngredientSerializer(serializers.ModelSerializer):
         read_only_fields = ('measurement_unit', 'name')
 
 
-# class IngredientRecipeSerializer(serializers.ModelSerializer):
-#     """Сериализатор для связи ингредиентов и рецептов."""
-
-#     id = serializers.IntegerField(source='ingredient.id')
-#     name = serializers.CharField(source='ingredient.name')
-#     measurement_unit = serializers.CharField(
-#         source='ingredient.measurement_unit'
-#     )
-
-#     class Meta:
-#         model = Ingredients
-#         fields = ('id', 'name', 'measurement_unit', 'amount')
-#         read_only_fields = ('name', 'measurement_unit')
-
-
 class IngredientsSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели связи рецептов и ингредиентов."""
 
     id = serializers.IntegerField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name', required=False)
@@ -70,6 +55,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 
 class BaseRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для сокращенного отображения рецептов."""
 
     class Meta:
         model = Recipe
@@ -77,10 +63,8 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
 
 
 class GetRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для полного отображения рецептов."""
 
-    # ingredients = IngredientRecipeSerializer(
-    #     many=True, source='ingredientrecipe_set'
-    # )
     ingredients = IngredientsSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     author = CustomUserSerializer(required=False)
@@ -94,7 +78,7 @@ class GetRecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'name', 'image',
             'text', 'cooking_time', 'is_favorited', 'is_in_shopping_cart',
         )
-        read_only_fields = ('author',)  # 'is_favorited', 'is_in_shopping_cart',)
+        read_only_fields = ('author',)
 
     def get_is_favorited(self, obj):
         if self.context:
@@ -308,7 +292,7 @@ class SubscribeUserSerializer(CustomUserSerializer):
 
     def get_recipes(self, obj):
         # Вывод рецептов для пользователя делаем через кастомный пагинатор.
-        recipes = obj.author.all()
+        recipes = obj.recipes.all()
         paginator = CustomRecipePagination()
         result_page = paginator.paginate_queryset(
             recipes, self.context['request']
@@ -321,11 +305,12 @@ class SubscribeUserSerializer(CustomUserSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
-        return obj.author.count()
+        return obj.recipes.count()
 
     def get_is_subscribed(self, obj):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
                 return obj in user.is_subscribed.all()
+                        # or obj == user)
         return False

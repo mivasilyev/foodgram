@@ -20,11 +20,8 @@ recipes_urls = [
     path('<int:id>/get-link/', ShortLinkAPIView.as_view()),
     path('download_shopping_cart/', DownloadShoppingCartView.as_view()),
 ]
+
 urlpatterns = [
-    # path('recipes/<int:id>/favorite/', FavoriteAPIView.as_view()),
-    # path('recipes/<int:id>/delete/', FavoriteAPIView.as_view()),
-    # path('recipes/<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
-    # path('recipes/<int:id>/get-link/', ShortLinkAPIView.as_view()),
     path('recipes/', include(recipes_urls)),
     path('users/me/avatar/', AvatarAPIView.as_view()),
     path('', include(router.urls)),

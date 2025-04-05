@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from constants import FORBIDDEN_NAMES, MAX_USERNAME_LENGTH, USERNAME_PATTERN
+from constants import FORBIDDEN_NAMES, MAX_LENGTH, USERNAME_PATTERN
 
 User = get_user_model()
 
@@ -42,10 +42,10 @@ class CustomUserCreateSerializer(UserCreateSerializer):
                 'Имя пользователя может содержать буквы, цифры и знаки '
                 '@/./+/-/_.'
             )
-        if len(value) > MAX_USERNAME_LENGTH:
+        if len(value) > MAX_LENGTH:
             raise ValidationError(
                 'В имени пользователя должно быть не более '
-                f'{MAX_USERNAME_LENGTH} символов.'
+                f'{MAX_LENGTH} символов.'
             )
         return value
 
@@ -67,4 +67,5 @@ class CustomUserSerializer(UserSerializer):
             user = self.context.get('request').user
             if user.is_authenticated:
                 return obj in user.is_subscribed.all()
+                        # or obj == user)
         return False
