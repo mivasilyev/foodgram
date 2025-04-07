@@ -24,7 +24,7 @@ class Base64ImageField(serializers.ImageField):
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
-    """Сериализатор djoser для создания новых пользователей с доп. полями."""
+    """Доработанный сериализатор djoser для создания новых пользователей."""
 
     class Meta:
         model = User
@@ -51,6 +51,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
+    """Доработанный сериализатор djoser для пользователей."""
 
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(required=False, allow_null=True)
@@ -67,5 +68,4 @@ class CustomUserSerializer(UserSerializer):
             user = self.context.get('request').user
             if user.is_authenticated:
                 return obj in user.is_subscribed.all()
-                        # or obj == user)
         return False

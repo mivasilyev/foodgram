@@ -1,9 +1,7 @@
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (DjangoFilterBackend, FilterSet,
-                                           ModelMultipleChoiceFilter,
-                                           CharFilter, MultipleChoiceFilter)
+                                           ModelMultipleChoiceFilter)
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
@@ -12,10 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.serializers import (BaseRecipeSerializer, GetRecipeSerializer,
-                             IngredientSerializer, RecipeSerializer,
+from api.serializers import (GetRecipeSerializer, IngredientSerializer,
+                             RecipeSerializer, ShortRecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
-from constants import SHOPPING_CART_FILENAME, SHORT_LINK_PREFIX
+from constants import SHOPPING_CART_FILENAME  # , SHORT_LINK_PREFIX
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import IsAuthorOrReadOnly
 from users.serializers import CustomUserSerializer
@@ -95,58 +93,17 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeFilter(FilterSet):
+    """Фильтр рецептов."""
 
-    # tags = CharFilter(field_name='tags__slug')  # , method='search_filter')
     tags = ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
-        # lookup_type='in',
         queryset=Tag.objects.all(),
     )
-
-    # tags = django_filters.ModelMultipleChoiceFilter(
-    #     name='sitetags__name',
-    #     to_field_name='name',
-    #     lookup_type='in',
-    #     queryset=SiteTag.objects.all()
-    # )
 
     class Meta:
         model = Recipe
         fields = ['author', 'tags']
-        # fields = {
-        #     'author': ['exact'],  # , 'contains'
-        #     'tags': ['exact'],
-        # }
-
-# from django_filters import Filter
-# from django_filters.fields import Lookup
-# from .models import Product
-# class ListFilter(Filter):
-#     def filter(self, qs, value):
-#         value_list = value.split(u',')
-#         return super(ListFilter, self).filter(qs, Lookup(value_list, 'in'))
-# class ProductFilterSet(django_filters.FilterSet):
-#     category = ListFilter(name='categories__slug')
-#     class Meta:
-#         model = Product
-#         fields = ['category']
-
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     tag_choices = self.data.getlist('tags')
-    #     print(tag_choices)
-        # print(args, kwargs)
-
-        # self.extra['choices'] += [
-        #     ('relevance', 'Relevance'),
-        #     ('-relevance', 'Relevance (descending)'),
-        # ]
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.data.getlist("type")
 
 
 class RecipeViewSet(ModelViewSet):
@@ -160,7 +117,6 @@ class RecipeViewSet(ModelViewSet):
 
     def get_queryset(self):
         # Добавляем фильтрацию по is_favorited, is_in_shopping_cart.
-        # print(self.request.query_params)
         queryset = Recipe.objects.all()
         user = self.request.user
         if user.is_authenticated:
@@ -216,47 +172,13 @@ class ShortLinkAPIView(APIView):
 
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
-        response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
+        # response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
+        response = {'short-link': f'{recipe.short_link}'}
         return Response(response, status=status.HTTP_200_OK)
 
 
-# class RecipeAPIView(APIView):
-#     """Рецепты."""
-
-#     permission_classes = (CustomUserPermission,)
-
-#     def get(self, request):
-#         """Получение рецептов."""
-#         recipes = Recipe.objects.all()
-#         paginator = LimitOffsetPagination()
-#         result_page = paginator.paginate_queryset(recipes, request)
-#         serializer = GetRecipeSerializer(
-#             result_page, many=True, context={'request': request})
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def post(self, request):
-#         """Публикация рецепта."""
-#         serializer = RecipeSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(author=self.request.user)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# def get(self, request, pk, format=None):
-
-#     #user = request.user
-#     event = Event.objects.get(pk=pk)
-#     news = event.get_news_items().all()
-#     paginator = LimitOffsetPagination()
-#     result_page = paginator.paginate_queryset(news, request)
-#     serializer = NewsItemSerializer(result_page, many=True, context={'request':request})
-#     response = Response(serializer.data, status=status.HTTP_200_OK)
-#     return response
-
-
 class FavoriteAPIView(APIView):
-    """Класс для сохранения и удаления рецепта в избранное."""
+    """Класс для сохранения рецепта в избранное и удаления из избранного."""
 
     def post(self, request, id):
         user = self.request.user
@@ -264,7 +186,7 @@ class FavoriteAPIView(APIView):
         if recipe not in user.is_favorited.all():
             recipe.is_favorited.add(user)
             if recipe in user.is_favorited.all():
-                serializer = BaseRecipeSerializer(recipe)
+                serializer = ShortRecipeSerializer(recipe)
                 return Response(
                     serializer.data,
                     status=status.HTTP_201_CREATED
@@ -282,7 +204,7 @@ class FavoriteAPIView(APIView):
 
 
 class ShoppingCartAPIView(APIView):
-    """Класс для сохранения и удаления рецепта в корзину."""
+    """Класс для добавления рецепта в корзину покупок и удаления."""
 
     def post(self, request, id):
         user = self.request.user
@@ -290,7 +212,7 @@ class ShoppingCartAPIView(APIView):
         if recipe not in user.is_in_shopping_cart.all():
             recipe.is_in_shopping_cart.add(user)
             if recipe in user.is_in_shopping_cart.all():
-                serializer = BaseRecipeSerializer(recipe)
+                serializer = ShortRecipeSerializer(recipe)
                 return Response(
                     data=serializer.data,
                     status=status.HTTP_201_CREATED
@@ -333,77 +255,12 @@ class DownloadShoppingCartView(APIView):
         return response
 
 
-# class UserSubscriptionViewSet(ModelViewSet):
-#     """Подписки пользователей."""
-
-#     queryset = User.objects.all()
-#     serializer_class = SubscribeUserSerializer
-#     permission_classes = (IsAuthenticatedOrReadOnly,)
-#     http_method_names = ['get', 'post', 'delete']
-#     # filter_backends = (DjangoFilterBackend,)
-#     # filterset_fields = ('author', 'tags__slug')  # 'tags__name'
-
-#     def perform_create(self, serializer):
-#         print(self.request, serializer)
-#         return super().perform_create(serializer)
-
-
-# class UserSubscriptionViewSet(mixins.CreateModelMixin,
-#                               #   mixins.ListModelMixin,
-#                               #   mixins.DestroyModelMixin,
-#                               #   mixins.RetrieveModelMixin,
-#                               #   mixins.UpdateModelMixin,
-#                               GenericViewSet):
-
-#     queryset = User.objects.all()
-#     serializer_class = SubscribeUserSerializer
-
-
-#     def perform_create(self, serializer):
-#         print('===perform_create')
-#         return super().perform_create(serializer)
-
-
-# class UserSubscriptionView(APIView):
-#     """Подписки пользователей."""
-
-#     # def get():
-#     #     """
-#     #     Возвращает пользователей, на которых подписан текущий пользователь.
-#     #     В выдачу добавляются рецепты.
-#     #     """
-#     #     pass
-
-#     def post(self, request, id):
-#         """Подписаться на пользователя."""
-#         user = self.request.user
-#         subscribe = get_object_or_404(User, id=id)
-#         user.is_subscribed.add(subscribe)
-#         serializer = SubscribeUserSerializer(
-#             subscribe,
-#             context={'request': request}
-#         )
-#         return Response(
-#             serializer.data,
-#             status=status.HTTP_201_CREATED
-#         )
-
-#     def delete(self, request, id):
-#         """Удалить подписку на пользователя."""
-#         user = self.request.user
-#         unsubscribe = get_object_or_404(User, id=id)
-#         user.is_subscribed.remove(unsubscribe)
-#         if unsubscribe not in user.is_subscribed.all():
-#             return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class AvatarAPIView(APIView):
     """Работа с аватаром."""
 
     def put(self, request):
         """Обновление аватара пользователя."""
         if 'avatar' in request.data:
-            # return Response(status=status.HTTP_400_BAD_REQUEST)
             user = self.request.user
             serializer = CustomUserSerializer(
                 user, data=request.data, partial=True)
@@ -411,7 +268,9 @@ class AvatarAPIView(APIView):
                 serializer.save()
                 response = {'avatar': serializer.data['avatar']}
                 return Response(response, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):

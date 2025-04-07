@@ -33,6 +33,9 @@ class MyUser(AbstractUser):
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
 
+    def __str__(self):
+        return self.username
+
 
 class Subscribe(models.Model):
     """Модель подписки пользователей друг на друга."""
@@ -47,7 +50,7 @@ class Subscribe(models.Model):
         MyUser,
         on_delete=models.CASCADE,
         related_name='following',
-        verbose_name='Подписан'
+        verbose_name='Подписан на'
     )
 
     class Meta:
@@ -65,3 +68,6 @@ class Subscribe(models.Model):
                 name='self_subscription'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} на {self.subscribed}'
