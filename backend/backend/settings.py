@@ -7,14 +7,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET_KEY = 'django-insecure-h2%6t)+gqzehk+djnw04ms!1b@%#ti3#4g2i=io%8+e+0qqa0w'
 SECRET_KEY = os.getenv('SECRET_KEY', 'Default secret key')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
-    '158.160.23.53', 'kittygram.ddnsking.com', 'localhost', '127.0.0.1'
+    '158.160.23.53', 'foodg.run.place', 'localhost', '127.0.0.1'
 ]
 
-# STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'collected_static'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'collected_static'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -68,23 +68,23 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 AUTH_USER_MODEL = 'users.MyUser'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB', 'kittygram'),
-#         'USER': os.getenv('POSTGRES_USER', 'kittygram_user'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-#         'HOST': os.getenv('DB_HOST', 'db'),
-#         'PORT': os.getenv('DB_PORT', 5432)
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'foodgram'),
+        'USER': os.getenv('POSTGRES_USER', 'foodgram_user'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'db'),
+        'PORT': os.getenv('DB_PORT', 5432)
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
