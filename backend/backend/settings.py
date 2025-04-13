@@ -4,8 +4,8 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY = 'django-insecure-h2%6t)+gqzehk+djnw04ms!1b@%#ti3#4g2i=io%8+e+0qqa0w'
-SECRET_KEY = os.getenv('SECRET_KEY', 'Default secret key')
+SECRET_KEY = 'django-insecure-h2%6t)+gqzehk+djnw04ms!1b@%#ti3#4g2i=io%8+e+0qqa0w'
+# SECRET_KEY = os.getenv('SECRET_KEY', 'Default secret key')
 
 DEBUG = True
 
@@ -13,8 +13,10 @@ ALLOWED_HOSTS = [
     '158.160.23.53', 'foodg.run.place', 'localhost', '127.0.0.1'
 ]
 
+# ===
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'collected_static'
+STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
+# ===
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -110,9 +112,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'collected_static'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
