@@ -13,7 +13,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.serializers import (GetRecipeSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
-from constants import SHOPPING_CART_FILENAME  # , SHORT_LINK_PREFIX
+from constants import SHOPPING_CART_FILENAME, SHORT_LINK_PREFIX
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import IsAuthorOrReadOnly
 from users.serializers import CustomUserSerializer
@@ -172,8 +172,8 @@ class ShortLinkAPIView(APIView):
 
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
-        # response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
-        response = {'short-link': f'{recipe.short_link}'}
+        response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
+        # response = {'short-link': f'{recipe.short_link}'}
         return Response(response, status=status.HTTP_200_OK)
 
 

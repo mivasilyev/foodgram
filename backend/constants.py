@@ -15,7 +15,7 @@ CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
 SHORT_LINK_LENGTH = 6
 # Префикс короткой ссылки.
 # SHORT_LINK_PREFIX = 'https://site_name.com/'
-# SHORT_LINK_PREFIX = 'http://127.0.0.1:8000'
+SHORT_LINK_PREFIX = 'http://localhost/'
 
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'
