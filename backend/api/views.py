@@ -1,10 +1,10 @@
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import (DjangoFilterBackend, FilterSet,
                                            ModelMultipleChoiceFilter)
 from djoser.views import UserViewSet
 from rest_framework import status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -165,16 +165,37 @@ class RecipeViewSet(ModelViewSet):
         )
 
 
-class ShortLinkAPIView(APIView):
+class GetShortLinkAPIView(APIView):
     """Получение короткой ссылки."""
 
     permission_classes = (AllowAny,)
 
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
-        response = {'short-link': f'{SHORT_LINK_PREFIX}{recipe.short_link}'}
+        response = {'short-link': f'{SHORT_LINK_PREFIX}s/{recipe.short_link}/'}
         # response = {'short-link': f'{recipe.short_link}'}
         return Response(response, status=status.HTTP_200_OK)
+
+
+# class ShortLinkAPIView(APIView):
+#     """Получение рецепта по короткой ссылке."""
+
+#     permission_classes = (AllowAny,)
+
+#     def get(self, request, short_link):
+#         recipe = get_object_or_404(Recipe, short_link=short_link)
+#         redir_link = f'/api/recipes/{recipe.id}/'
+#         full_link = request.build_absolute_uri(redir_link)
+#         return HttpResponsePermanentRedirect(full_link)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def short_link_redirect(request, short_link):
+    recipe = get_object_or_404(Recipe, short_link=short_link)
+    redir_link = f'/recipes/{recipe.id}/'
+    full_link = request.build_absolute_uri(redir_link)
+    return HttpResponsePermanentRedirect(full_link)
 
 
 class FavoriteAPIView(APIView):

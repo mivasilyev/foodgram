@@ -3,8 +3,8 @@ from rest_framework.routers import SimpleRouter
 
 from api.views import (AvatarAPIView, CustomUserViewSet,
                        DownloadShoppingCartView, FavoriteAPIView,
-                       IngredientViewSet, RecipeViewSet, ShoppingCartAPIView,
-                       ShortLinkAPIView, TagViewSet)
+                       GetShortLinkAPIView, IngredientViewSet, RecipeViewSet,
+                       ShoppingCartAPIView, TagViewSet)
 
 router = SimpleRouter()
 
@@ -17,7 +17,7 @@ recipes_urls = [
     path('<int:id>/favorite/', FavoriteAPIView.as_view()),
     path('<int:id>/delete/', FavoriteAPIView.as_view()),
     path('<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
-    path('<int:id>/get-link/', ShortLinkAPIView.as_view()),
+    path('<int:id>/get-link/', GetShortLinkAPIView.as_view()),
     path('download_shopping_cart/', DownloadShoppingCartView.as_view()),
 ]
 
