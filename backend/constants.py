@@ -13,6 +13,7 @@ DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
 CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
 # Длина короткой ссылки.
 SHORT_LINK_LENGTH = 6
+
 # Префикс короткой ссылки.
 # SHORT_LINK_PREFIX = 'https://site_name.com/'
 SHORT_LINK_PREFIX = 'http://localhost/'

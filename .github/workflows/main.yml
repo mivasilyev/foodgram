@@ -5,7 +5,7 @@ on:
 
 jobs:
 
-  build_and_push_to_docker_hub:
+  build_backend_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -71,21 +71,21 @@ jobs:
         with:
           context: ./infra/
           push: true
-          tags: mikva/foodgram_gateway:latest
+          tags: mikva/foodgram_nginx:latest
 
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: 
       # Дождёмся билда всех образов
-      - build_and_push_to_docker_hub
+      - build_backend_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
       - build_gateway_and_push_to_docker_hub
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
     # Копируем docker-compose.production.yml на продакшен-сервер
-    - name: Copy docker-compose.yml via ssh
+    - name: Copy docker-compose.production.yml via ssh
       uses: appleboy/scp-action@master
     # Передаём параметры для action appleboy/scp-action:
       with:
@@ -103,8 +103,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         # Параметр script передаёт в action appleboy/ssh-action команды,
-        # которые нужно выполнить на сервере, 
-        # с которым установлено соединение
+        # которые нужно выполнить на сервере
         script: |
           cd foodgram
           # Выполняет pull образов с Docker Hub
@@ -116,15 +115,3 @@ jobs:
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
           sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
-
-#   send_message:
-#     runs-on: ubuntu-latest
-#     if: github.ref == 'refs/heads/main'
-#     needs: deploy
-#     steps:
-#     - name: Send message
-#       uses: appleboy/telegram-action@master
-#       with:
-#         to: ${{ secrets.TELEGRAM_TO }}
-#         token: ${{ secrets.TELEGRAM_TOKEN }}
-#         message: Деплой версии от ${{ github.actor }} успешно выполнен! ${{ github.event.commits[0].message }}

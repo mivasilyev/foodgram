@@ -4,37 +4,44 @@ volumes:
   pg_data:
   static:
   media:
-
 services:
   db:
     image: postgres:13.10
-    env_file: .env
+    container_name: foodgram-db
+    env_file:
+      - .env
     volumes:
       - pg_data:/var/lib/postgresql/data
 
   backend:
     image: mikva/foodgram_backend
-    env_file: .env
+    container_name: foodgram-backend
+    env_file:
+      - .env
     volumes:
       - static:/backend_static
-      - ./media:/app/media
+      - media:/app/media
     depends_on:
       - db
 
   frontend:
     image: mikva/foodgram_frontend
-    env_file: .env
-    command: cp -r /app/build/. /static/
+    container_name: foodgram-front
+    env_file:
+      - .env
     volumes:
-      - static:/static
+      - static:/frontend_static
+    command: cp -r /app/build/. /frontend_static/
 
-  gateway:
-    image: mikva/foodgram_gateway
-    env_file: .env
+  nginx:
+    container_name: foodgram-proxy
+    image: mikva/foodgram_proxy
+    env_file:
+      - .env
     ports:
       - 8080:80
     volumes:
-      - static:/static
-      - ./media:/app/media
+      - static:/staticfiles/
+      - media:/app/media
     depends_on:
       - backend
