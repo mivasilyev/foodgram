@@ -34,8 +34,8 @@ services:
     command: cp -r /app/build/. /frontend_static/
 
   nginx:
-    container_name: foodgram-proxy
     image: mikva/foodgram_proxy
+    container_name: foodgram-proxy
     env_file:
       - .env
     ports:
