@@ -1,3 +1,4 @@
+from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import (DjangoFilterBackend, FilterSet,
@@ -172,26 +173,16 @@ class GetShortLinkAPIView(APIView):
 
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
-        response = {'short-link': f'{SHORT_LINK_PREFIX}s/{recipe.short_link}/'}
-        # response = {'short-link': f'{recipe.short_link}'}
+        domain = get_current_site(request).domain
+        short_link = f'{domain}/s/{recipe.short_link}/'
+        response = {'short-link': short_link}
         return Response(response, status=status.HTTP_200_OK)
-
-
-# class ShortLinkAPIView(APIView):
-#     """Получение рецепта по короткой ссылке."""
-
-#     permission_classes = (AllowAny,)
-
-#     def get(self, request, short_link):
-#         recipe = get_object_or_404(Recipe, short_link=short_link)
-#         redir_link = f'/api/recipes/{recipe.id}/'
-#         full_link = request.build_absolute_uri(redir_link)
-#         return HttpResponsePermanentRedirect(full_link)
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def short_link_redirect(request, short_link):
+    """Редирект коротких ссылок на рецепт."""
     recipe = get_object_or_404(Recipe, short_link=short_link)
     redir_link = f'/recipes/{recipe.id}/'
     full_link = request.build_absolute_uri(redir_link)
