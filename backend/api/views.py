@@ -1,11 +1,13 @@
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpResponse, HttpResponsePermanentRedirect
-from django.shortcuts import get_object_or_404, redirect
-from django_filters.rest_framework import (DjangoFilterBackend, FilterSet,
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import (CharFilter, DjangoFilterBackend, 
+                                           FilterSet,
                                            ModelMultipleChoiceFilter)
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
+# from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +16,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.serializers import (GetRecipeSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
-from constants import SHOPPING_CART_FILENAME, SHORT_LINK_PREFIX
+from constants import SHOPPING_CART_FILENAME
 from recipes.models import Ingredient, Recipe, Tag, User
 from users.permissions import IsAuthorOrReadOnly
 from users.serializers import CustomUserSerializer
@@ -82,6 +84,16 @@ class TagViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
 
+class IngredientFilter(FilterSet):
+    """Фильтрация ингредиентов."""
+
+    name = CharFilter(field_name='name', lookup_expr='icontains')
+
+    class Meta:
+        model = Ingredient
+        fields = ['name',]
+
+
 class IngredientViewSet(ReadOnlyModelViewSet):
     """Вьюсет для получения ингредиентов."""
 
@@ -90,7 +102,8 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     permission_classes = (AllowAny,)
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    # filterset_fields = ('name',)
+    filterset_class = IngredientFilter
 
 
 class RecipeFilter(FilterSet):
