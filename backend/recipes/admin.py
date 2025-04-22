@@ -29,7 +29,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'cooking_time', 'pub_date', 'short_link'
     )
     readonly_fields = ('favorited_count', 'pub_date')
-    search_fields = ('author', 'name',)
+    search_fields = ('author__username', 'name',)
     list_filter = ('tags',)
     inlines = (RecipeIngredientsInline,)
 
