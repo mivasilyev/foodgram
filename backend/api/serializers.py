@@ -268,5 +268,3 @@ class SubscribeUserSerializer(CustomUserSerializer):
             if user.is_authenticated:
                 return obj in user.is_subscribed.all()
         return False
-
-# recipe.ingredients.add(current_ingredient, through_defaults={'amount': amount})
