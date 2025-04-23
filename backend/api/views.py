@@ -90,7 +90,7 @@ class IngredientFilter(FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = ['name',]
+        fields = ['name', ]
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
