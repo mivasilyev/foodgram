@@ -64,9 +64,9 @@ class CustomUserSerializer(UserSerializer):
             'is_subscribed', 'avatar'
         )
 
-    def get_is_subscribed(self, obj):
+    def get_is_subscribed(self, to_user):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return obj in user.is_subscribed.all()
+                return to_user in user.is_subscribed.all()
         return False

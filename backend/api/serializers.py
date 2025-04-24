@@ -1,7 +1,5 @@
-# import base64
 import random
 
-# from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -12,24 +10,12 @@ from recipes.models import Ingredient, Ingredients, Recipe, Tag, User
 from recipes.serializers import CustomUserSerializer
 
 
-# class Base64ImageField(serializers.ImageField):
-#     """Обработка избображений."""
-
-#     def to_internal_value(self, data):
-#         if isinstance(data, str) and data.startswith('data:image'):
-#             format, imgstr = data.split(';base64,')
-#             ext = format.split('/')[-1]
-#             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-#         return super().to_internal_value(data)
-
-
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор для тегов."""
 
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'slug')
-        read_only_fields = ('name', 'slug')
+        fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -37,8 +23,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ('id', 'name', 'measurement_unit')
-        read_only_fields = ('measurement_unit', 'name')
+        fields = '__all__'
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
@@ -53,6 +38,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredients
         fields = ('id', 'name', 'measurement_unit', 'amount')
+        read_only_fields = ('id', 'name', 'measurement_unit')
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
@@ -64,10 +50,10 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 
 
 class BaseRecipeSerializer(serializers.ModelSerializer):
-    """Общая часть сериализаторов рецептов."""
+    """Общая часть сериализаторов для чтения и записи рецептов."""
 
     ingredients = IngredientsSerializer(many=True)
-    image = Base64ImageField(required=True)  # required=False, allow_null=True)
+    image = Base64ImageField()
     author = CustomUserSerializer(required=False)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -80,29 +66,29 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('author',)
 
-    def get_is_favorited(self, obj):
+    def get_is_favorited(self, recipe):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return obj in user.is_favorited.all()
+                return recipe in user.is_favorited.all()
         return False
 
-    def get_is_in_shopping_cart(self, obj):
+    def get_is_in_shopping_cart(self, recipe):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return obj in user.is_in_shopping_cart.all()
+                return recipe in user.is_in_shopping_cart.all()
         return False
 
 
 class GetRecipeSerializer(BaseRecipeSerializer):
-    """Модификация для полного отображения рецептов."""
+    """Модификация сериализатора для полного отображения рецептов."""
 
     tags = TagSerializer(many=True)
 
 
 class RecipeSerializer(BaseRecipeSerializer):
-    """Модификация для сохранения рецептов."""
+    """Модификация сериализатора для сохранения рецептов."""
 
     def validate_ingredients(self, value):
         if not value:
@@ -252,10 +238,10 @@ class SubscribeUserSerializer(CustomUserSerializer):
             'is_subscribed', 'avatar', 'recipes', 'recipes_count'
         )
 
-    def get_recipes(self, obj):
+    def get_recipes(self, to_user):
         # Вывод рецептов для пользователя делаем через кастомный пагинатор
         # для ограничения количества рецептов в выдаче.
-        recipes = obj.recipes.all()
+        recipes = to_user.recipes.all()
         paginator = CustomRecipePagination()
         result_page = paginator.paginate_queryset(
             recipes, self.context['request']
@@ -267,12 +253,12 @@ class SubscribeUserSerializer(CustomUserSerializer):
         )
         return serializer.data
 
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
+    def get_recipes_count(self, to_user):
+        return to_user.recipes.count()
 
-    def get_is_subscribed(self, obj):
+    def get_is_subscribed(self, to_user):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return obj in user.is_subscribed.all()
+                return to_user in user.is_subscribed.all()
         return False

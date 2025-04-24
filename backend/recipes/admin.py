@@ -54,8 +54,8 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = (RecipeIngredientsInline,)
 
     @admin.display(description='В избранном')
-    def favorited_count(self, obj):
-        return obj.favorite.all().count()
+    def favorited_count(self, recipe):
+        return recipe.favorite.all().count()
 
 
 @admin.register(Ingredient)
