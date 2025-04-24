@@ -1,25 +1,26 @@
-import base64
+# import base64
 import random
 
-from django.core.files.base import ContentFile
+# from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
 from constants import CHARACTERS, SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Ingredients, Recipe, Tag, User
-from users.serializers import CustomUserSerializer
+from recipes.serializers import CustomUserSerializer
 
 
-class Base64ImageField(serializers.ImageField):
-    """Обработка избображений."""
+# class Base64ImageField(serializers.ImageField):
+#     """Обработка избображений."""
 
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-        return super().to_internal_value(data)
+#     def to_internal_value(self, data):
+#         if isinstance(data, str) and data.startswith('data:image'):
+#             format, imgstr = data.split(';base64,')
+#             ext = format.split('/')[-1]
+#             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+#         return super().to_internal_value(data)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -66,7 +67,7 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
     """Общая часть сериализаторов рецептов."""
 
     ingredients = IngredientsSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=True)  # required=False, allow_null=True)
     author = CustomUserSerializer(required=False)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -145,6 +146,13 @@ class RecipeSerializer(BaseRecipeSerializer):
         if not value or value < 1:
             raise serializers.ValidationError(
                 'Должно быть указано время приготовления блюда.'
+            )
+        return value
+
+    def validate_image(self, value):
+        if value is None:
+            raise serializers.ValidationError(
+                'В рецепте должна быть картинка.'
             )
         return value
 

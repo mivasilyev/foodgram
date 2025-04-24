@@ -1,7 +1,27 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
-from recipes.models import (Favorite, Ingredient, Ingredients, Recipe,
-                            ShoppingCart, Tag)
+from recipes.models import (Favorite, Ingredient, Ingredients, User, Recipe,
+                            ShoppingCart, Subscribe, Tag)
+
+
+@admin.register(User)
+class MyUserAdmin(UserAdmin):
+    """Админка для пользователей."""
+
+    list_display = (
+        'username', 'email', 'first_name', 'last_name', 'is_staff', 'avatar'
+    )
+    search_fields = ('email', 'username')
+    list_filter = UserAdmin.list_filter + ('first_name',)
+
+
+@admin.register(Subscribe)
+class SubscribeAdmin(admin.ModelAdmin):
+    """Админка для подписок."""
+
+    list_display = ('user', 'subscribed')
+    search_fields = ('user__username', 'subscribed__username')
 
 
 class RecipeIngredientsInline(admin.StackedInline):

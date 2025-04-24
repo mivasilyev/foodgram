@@ -1,3 +1,4 @@
+from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
@@ -15,10 +16,9 @@ from api.serializers import (GetRecipeSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeUserSerializer, TagSerializer)
 from constants import SHOPPING_CART_FILENAME
-from django.contrib.sites.shortcuts import get_current_site
 from recipes.models import Ingredient, Recipe, Tag, User
-from users.permissions import IsAuthorOrReadOnly
-from users.serializers import CustomUserSerializer
+from recipes.permissions import IsAuthorOrReadOnly
+from recipes.serializers import CustomUserSerializer
 
 
 class CustomUserViewSet(UserViewSet):
