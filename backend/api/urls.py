@@ -4,7 +4,7 @@ from rest_framework.routers import SimpleRouter
 from api.views import (AvatarAPIView, CustomUserViewSet,
                        DownloadShoppingCartView, FavoriteAPIView,
                        GetShortLinkAPIView, IngredientViewSet, RecipeViewSet,
-                       ShoppingCartAPIView, short_link_redirect, TagViewSet)
+                       ShoppingCartAPIView, TagViewSet)
 
 router = SimpleRouter()
 
@@ -27,5 +27,4 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.authtoken')),
-    path('<str:short_link>/', short_link_redirect),
 ]

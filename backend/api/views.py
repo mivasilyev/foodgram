@@ -177,6 +177,7 @@ class RecipeViewSet(ModelViewSet):
         )
 
 
+# ============================================================================
 class GetShortLinkAPIView(APIView):
     """Получение короткой ссылки."""
 
@@ -185,7 +186,8 @@ class GetShortLinkAPIView(APIView):
     def get(self, request, id):
         recipe = get_object_or_404(Recipe, id=id)
         domain = get_current_site(request).domain
-        short_link = f'{domain}/s/{recipe.short_link}/'
+        # short_link = f'{domain}/s/{recipe.short_link}/'
+        short_link = f'{domain}/s/{hex(recipe.id)}'
         response = {'short-link': short_link}
         return Response(response, status=status.HTTP_200_OK)
 
@@ -194,10 +196,13 @@ class GetShortLinkAPIView(APIView):
 @permission_classes([AllowAny])
 def short_link_redirect(request, short_link):
     """Редирект коротких ссылок на рецепт."""
-    recipe = get_object_or_404(Recipe, short_link=short_link)
+    recipe_id = int(short_link, 16)
+    # recipe = get_object_or_404(Recipe, short_link=short_link)
+    recipe = get_object_or_404(Recipe, id=recipe_id)
     redir_link = f'/recipes/{recipe.id}/'
     full_link = request.build_absolute_uri(redir_link)
     return HttpResponsePermanentRedirect(full_link)
+# ============================================================================
 
 
 class FavoriteAPIView(APIView):

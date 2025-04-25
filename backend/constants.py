@@ -10,9 +10,9 @@ USERNAME_PATTERN = r'^[\w.@+-]+\Z'
 DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
 
 # Символы для генерации короткой ссылки.
-CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
+# CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
 # Длина короткой ссылки.
-SHORT_LINK_LENGTH = 6
+# SHORT_LINK_LENGTH = 6
 
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'

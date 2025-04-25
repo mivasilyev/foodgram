@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.text import Truncator
 
-from constants import (DEFAULT_USER_AVATAR, MAX_LENGTH, SHORT_LINK_LENGTH,
+from constants import (DEFAULT_USER_AVATAR, MAX_LENGTH,  # SHORT_LINK_LENGTH,
                        WORDS_TRUNCATE)
 
 # User = get_user_model()
@@ -141,11 +141,11 @@ class Recipe(models.Model):
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
-    short_link = models.CharField(
-        max_length=SHORT_LINK_LENGTH,
-        unique=True,
-        verbose_name='Короткая ссылка'
-    )
+    # short_link = models.CharField(
+    #     max_length=SHORT_LINK_LENGTH,
+    #     unique=True,
+    #     verbose_name='Короткая ссылка'
+    # )
 
     class Meta:
         default_related_name = 'recipes'

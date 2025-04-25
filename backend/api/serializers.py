@@ -5,7 +5,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
-from constants import CHARACTERS, SHORT_LINK_LENGTH
+# from constants import CHARACTERS, SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Ingredients, Recipe, Tag, User
 from recipes.serializers import CustomUserSerializer
 
@@ -157,22 +157,22 @@ class RecipeSerializer(BaseRecipeSerializer):
             )
         return data
 
-    def make_new_short_link(self):
-        # Создание короткой ссылки.
-        while True:
-            short_link = ''.join(
-                random.choices(CHARACTERS, k=SHORT_LINK_LENGTH)
-            )
-            if not Recipe.objects.filter(short_link=short_link).exists():
-                break
-        return short_link
+    # def make_new_short_link(self):
+    #     # Создание короткой ссылки.
+    #     while True:
+    #         short_link = ''.join(
+    #             random.choices(CHARACTERS, k=SHORT_LINK_LENGTH)
+    #         )
+    #         if not Recipe.objects.filter(short_link=short_link).exists():
+    #             break
+    #     return short_link
 
     def create(self, validated_data):
         # Создаем рецепт.
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe(**validated_data)
-        recipe.short_link = self.make_new_short_link()
+        # recipe.short_link = self.make_new_short_link()
         recipe.save()
         # Устанавливаем связи с ингредиентами.
         for ingredient in ingredients:

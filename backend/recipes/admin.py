@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 
 from recipes.models import (Favorite, Ingredient, Ingredients, User, Recipe,
                             ShoppingCart, Subscribe, Tag)
 
+admin.site.unregister(Group)
 
 @admin.register(User)
 class MyUserAdmin(UserAdmin):
@@ -46,7 +48,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = ('author', 'name')
     fields = (
         'name', 'favorited_count', 'author', 'image', 'text', 'tags',
-        'cooking_time', 'pub_date', 'short_link'
+        'cooking_time', 'pub_date',  # 'short_link'
     )
     readonly_fields = ('favorited_count', 'pub_date')
     search_fields = ('author__username', 'name',)
