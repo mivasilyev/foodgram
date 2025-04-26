@@ -29,7 +29,12 @@ nano .env
 ```
 sudo docker compose up --build
 ```
-После запуска проект доступен по адресу http://localhost:8080/.
+в отдельном окне терминала выполнить импорт json-фикстур с продуктами и тегами
+```
+sudo docker exec foodgram-backend python manage.py loaddata tags.json ingredients.json
+```
+После запуска проект доступен [здесь](http://localhost:8080/), админ-зона [здесь](http://localhost:8080/admin/)
+
 Деплой на https://foodg.run.place/.
 
 ## Использованные технологии

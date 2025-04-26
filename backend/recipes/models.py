@@ -98,19 +98,19 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    """Ингредиенты."""
+    """Продукты."""
 
     name = models.CharField(
         max_length=64, verbose_name='Название', unique=True
     )
     measurement_unit = models.CharField(
-        max_length=64, verbose_name='Единица измерения', blank=True
+        max_length=64, verbose_name='Мера', blank=True
     )
 
     class Meta:
         default_related_name = 'ingredients'
-        verbose_name = 'ингредиент'
-        verbose_name_plural = 'Ингредиенты'
+        verbose_name = 'продукт'
+        verbose_name_plural = 'Продукты'
 
     def __str__(self):
         return Truncator(self.name).words(WORDS_TRUNCATE)
@@ -158,22 +158,22 @@ class Recipe(models.Model):
 
 
 class Ingredients(models.Model):
-    """Ингредиенты в рецепте."""
+    """Продукты в рецепте."""
 
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, verbose_name='Ингредиент'
+        Ingredient, on_delete=models.CASCADE, verbose_name='Продукт'
     )
-    amount = models.FloatField(verbose_name='Количество')
+    amount = models.FloatField(verbose_name='Мера')
 
     class Meta:
-        verbose_name = 'ингредиенты в рецепте'
-        verbose_name_plural = 'Ингредиенты в рецепте'
+        verbose_name = 'продукты в рецепте'
+        verbose_name_plural = 'Продукты в рецепте'
         default_related_name = 'ingredients'
         constraints = [
-            # Ингредиент входит в рецепт один раз.
+            # Продукт входит в рецепт один раз.
             models.UniqueConstraint(
                 fields=['recipe', 'ingredient'],
                 name='unique_in_recipe'

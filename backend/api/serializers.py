@@ -19,7 +19,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор для ингредиентов."""
+    """Сериализатор для продуктов."""
 
     class Meta:
         model = Ingredient
@@ -27,7 +27,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели связи рецептов и ингредиентов."""
+    """Сериализатор для модели связи рецептов и продуктов."""
 
     id = serializers.IntegerField(source='ingredient.id')
     name = serializers.CharField(source='ingredient.name', required=False)
@@ -93,7 +93,7 @@ class RecipeSerializer(BaseRecipeSerializer):
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
-                'Рецепт должен содержать ингредиенты.'
+                'Рецепт должен содержать продукты.'
             )
         ingredient_ids = []
         for ingredient in value:
@@ -101,15 +101,15 @@ class RecipeSerializer(BaseRecipeSerializer):
             amount = ingredient['amount']
             if not Ingredient.objects.filter(id=id).exists():
                 raise serializers.ValidationError(
-                    f'Ингредиента {ingredient} нет в списке.'
+                    f'Продукта {ingredient} нет в списке.'
                 )
             if amount < 1:
                 raise serializers.ValidationError(
-                    'Слишком мало ингредиента.'
+                    'Слишком мало продукта.'
                 )
             if id in ingredient_ids:
                 raise serializers.ValidationError(
-                    'Ингредиенты не должны повторяться.'
+                    'Продукты не должны повторяться.'
                 )
             ingredient_ids.append(id)
         return value
@@ -153,7 +153,7 @@ class RecipeSerializer(BaseRecipeSerializer):
             )
         if 'ingredients' not in data:
             raise serializers.ValidationError(
-                'В рецепте нужны ингредиенты.'
+                'В рецепте нужны продукты.'
             )
         return data
 
@@ -174,7 +174,7 @@ class RecipeSerializer(BaseRecipeSerializer):
         recipe = Recipe(**validated_data)
         # recipe.short_link = self.make_new_short_link()
         recipe.save()
-        # Устанавливаем связи с ингредиентами.
+        # Устанавливаем связи с продуктами.
         for ingredient in ingredients:
             current_ingredient = get_object_or_404(
                 Ingredient,
@@ -199,11 +199,11 @@ class RecipeSerializer(BaseRecipeSerializer):
         instance.save()
         # Устанавливаем новые теги.
         instance.tags.set(validated_data.get('tags'))
-        # Переформатируем новые ингредиенты в словарь.
+        # Переформатируем новые продукты в словарь.
         new_ingredients = {}
         for ingr in validated_data.get('ingredients'):
             new_ingredients[ingr['ingredient']['id']] = ingr['amount']
-        # Перезаписываем ингредиенты, которые уже были в списке.
+        # Перезаписываем продукты, которые уже были в списке.
         ingredients = instance.ingredients.all()
         for ingredient in ingredients:
             if ingredient.ingredient.id in new_ingredients:
@@ -213,7 +213,7 @@ class RecipeSerializer(BaseRecipeSerializer):
                 ingredient.save()
             else:
                 ingredient.delete()
-        # Сохраняем новые ингредиенты.
+        # Сохраняем новые продукты.
         if new_ingredients:
             for ingredient in new_ingredients:
                 Ingredients.objects.create(

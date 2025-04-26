@@ -84,7 +84,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 
 class IngredientFilter(FilterSet):
-    """Фильтрация ингредиентов."""
+    """Фильтрация продуктов."""
 
     name = CharFilter(field_name='name', lookup_expr='icontains')
 
@@ -94,7 +94,7 @@ class IngredientFilter(FilterSet):
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
-    """Вьюсет для получения ингредиентов."""
+    """Вьюсет для получения продуктов."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer

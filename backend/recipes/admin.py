@@ -29,8 +29,8 @@ class SubscribeAdmin(admin.ModelAdmin):
 class RecipeIngredientsInline(admin.StackedInline):
     model = Ingredients
     extra = 0
-    verbose_name = 'ингредиент'
-    verbose_name_plural = 'Ингредиенты'
+    verbose_name = 'продукт'
+    verbose_name_plural = 'Продукты'
 
 
 @admin.register(Tag)
@@ -48,7 +48,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = ('author', 'name')
     fields = (
         'name', 'favorited_count', 'author', 'image', 'text', 'tags',
-        'cooking_time', 'pub_date',  # 'short_link'
+        'cooking_time', 'pub_date',
     )
     readonly_fields = ('favorited_count', 'pub_date')
     search_fields = ('author__username', 'name',)
@@ -62,7 +62,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    """Админка для ингредиентов."""
+    """Админка для продуктов."""
 
     list_display = ('name', 'measurement_unit',)
     list_display_links = ('name',)
