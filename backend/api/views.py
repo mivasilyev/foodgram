@@ -86,7 +86,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 class IngredientFilter(FilterSet):
     """Фильтрация продуктов."""
 
-    name = CharFilter(field_name='name', lookup_expr='icontains')
+    name = CharFilter(field_name='name', lookup_expr='istartswith')
 
     class Meta:
         model = Ingredient
