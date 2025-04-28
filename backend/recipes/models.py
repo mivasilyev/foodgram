@@ -1,22 +1,23 @@
-# from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import Truncator
 
-from constants import (DEFAULT_USER_AVATAR, MAX_LENGTH,  # SHORT_LINK_LENGTH,
-                       WORDS_TRUNCATE)
-
-# User = get_user_model()
+from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH,
+                       MID_MAX_LENGTH, MIN_COOKING_MINUTES, SHORT_MAX_LENGTH,
+                       TAG_MAX_LENGTH, WORDS_TRUNCATE)
 
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
 
     email = models.CharField(
-        verbose_name='Электронная почта', max_length=MAX_LENGTH, unique=True
+        verbose_name='Адрес электронной почты',
+        max_length=LONG_MAX_LENGTH,
+        unique=True
     )
     username = models.CharField(
-        verbose_name='Ник', max_length=MAX_LENGTH, unique=True
+        verbose_name='Уникальный юзернейм', max_length=MAX_LENGTH, unique=True
     )
     first_name = models.CharField(verbose_name='Имя', max_length=MAX_LENGTH)
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
@@ -28,7 +29,7 @@ class User(AbstractUser):
         blank=True
     )
     avatar = models.ImageField(
-        verbose_name='Аватар', upload_to='user_avatars', blank=True,
+        verbose_name='Ссылка на аватар', upload_to='user_avatars', blank=True,
         default=DEFAULT_USER_AVATAR
     )
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', ]
@@ -82,16 +83,20 @@ class Tag(models.Model):
     """Модель тега."""
 
     name = models.CharField(
-        verbose_name='Тег', max_length=MAX_LENGTH, unique=True
+        verbose_name='Уникальное название',
+        max_length=TAG_MAX_LENGTH,
+        unique=True
     )
     slug = models.SlugField(
-        verbose_name='Идентификатор', max_length=MAX_LENGTH, unique=True
+        verbose_name='Уникальный слаг',
+        max_length=TAG_MAX_LENGTH,
+        unique=True
     )
 
     class Meta:
         default_related_name = 'tags'
         verbose_name = 'тег'
-        verbose_name_plural = 'Теги'
+        verbose_name_plural = 'Список тегов'
 
     def __str__(self):
         return Truncator(self.name).words(WORDS_TRUNCATE)
@@ -101,16 +106,16 @@ class Ingredient(models.Model):
     """Продукты."""
 
     name = models.CharField(
-        max_length=64, verbose_name='Название', unique=True
+        max_length=MID_MAX_LENGTH, verbose_name='Название', unique=True
     )
     measurement_unit = models.CharField(
-        max_length=64, verbose_name='Мера', blank=True
+        max_length=SHORT_MAX_LENGTH, verbose_name='Мера', blank=True
     )
 
     class Meta:
-        default_related_name = 'ingredients'
+        default_related_name = 'ingredient'
         verbose_name = 'продукт'
-        verbose_name_plural = 'Продукты'
+        verbose_name_plural = 'Список продуктов'
 
     def __str__(self):
         return Truncator(self.name).words(WORDS_TRUNCATE)
@@ -124,28 +129,35 @@ class Recipe(models.Model):
         on_delete=models.DO_NOTHING,
         verbose_name='Автор'
     )
-    name = models.CharField(max_length=150, verbose_name='Название')
+    name = models.CharField(
+        max_length=LONG_MAX_LENGTH, verbose_name='Название'
+    )
     image = models.ImageField(
-        upload_to='recipe_images', verbose_name='Изображение'  # blank=True,
+        upload_to='recipe_images', verbose_name='Ссылка на картинку на сайте'
     )
     text = models.TextField(verbose_name='Описание')
-    tags = models.ManyToManyField(Tag, verbose_name='Теги')
-    cooking_time = models.SmallIntegerField(verbose_name='Время приготовления')
+    tags = models.ManyToManyField(Tag, verbose_name='Список тегов')
+    cooking_time = models.SmallIntegerField(
+        verbose_name='Время приготовления (в минутах)',
+        validators=[MinValueValidator(MIN_COOKING_MINUTES)]
+    )
     is_favorited = models.ManyToManyField(
-        User, through='Favorite', related_name='is_favorited', blank=True
+        User,
+        through='Favorite',
+        related_name='is_favorited',
+        blank=True,
+        verbose_name='Находится ли в избранном'
     )
     is_in_shopping_cart = models.ManyToManyField(
-        User, through='ShoppingCart', related_name='is_in_shopping_cart',
-        blank=True
+        User,
+        through='ShoppingCart',
+        related_name='is_in_shopping_cart',
+        blank=True,
+        verbose_name='Находится ли в корзине'
     )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
-    # short_link = models.CharField(
-    #     max_length=SHORT_LINK_LENGTH,
-    #     unique=True,
-    #     verbose_name='Короткая ссылка'
-    # )
 
     class Meta:
         default_related_name = 'recipes'
@@ -157,7 +169,7 @@ class Recipe(models.Model):
         return Truncator(self.name).words(WORDS_TRUNCATE)
 
 
-class Ingredients(models.Model):
+class IngredientInRecipe(models.Model):
     """Продукты в рецепте."""
 
     recipe = models.ForeignKey(

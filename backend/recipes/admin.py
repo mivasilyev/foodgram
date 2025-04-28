@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 
-from recipes.models import (Favorite, Ingredient, Ingredients, User, Recipe,
-                            ShoppingCart, Subscribe, Tag)
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, User,
+                            Recipe, ShoppingCart, Subscribe, Tag)
 
 admin.site.unregister(Group)
 
@@ -27,7 +27,7 @@ class SubscribeAdmin(admin.ModelAdmin):
 
 
 class RecipeIngredientsInline(admin.StackedInline):
-    model = Ingredients
+    model = IngredientInRecipe
     extra = 0
     verbose_name = 'продукт'
     verbose_name_plural = 'Продукты'

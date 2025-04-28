@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
 # from constants import CHARACTERS, SHORT_LINK_LENGTH
-from recipes.models import Ingredient, Ingredients, Recipe, Tag, User
+from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag, User
 from recipes.serializers import CustomUserSerializer
 
 
@@ -26,7 +26,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class IngredientsSerializer(serializers.ModelSerializer):
+class IngredientInRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для модели связи рецептов и продуктов."""
 
     id = serializers.IntegerField(source='ingredient.id')
@@ -36,7 +36,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Ingredients
+        model = IngredientInRecipe
         fields = ('id', 'name', 'measurement_unit', 'amount')
         read_only_fields = ('id', 'name', 'measurement_unit')
 
@@ -52,7 +52,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 class BaseRecipeSerializer(serializers.ModelSerializer):
     """Общая часть сериализаторов для чтения и записи рецептов."""
 
-    ingredients = IngredientsSerializer(many=True)
+    ingredients = IngredientInRecipeSerializer(many=True)
     image = Base64ImageField()
     author = CustomUserSerializer(required=False)
     is_favorited = serializers.SerializerMethodField()
@@ -180,7 +180,7 @@ class RecipeSerializer(BaseRecipeSerializer):
                 Ingredient,
                 id=ingredient['ingredient']['id']
             )
-            Ingredients.objects.create(
+            IngredientInRecipe.objects.create(
                 recipe=recipe,
                 ingredient=current_ingredient,
                 amount=ingredient['amount']
@@ -216,7 +216,7 @@ class RecipeSerializer(BaseRecipeSerializer):
         # Сохраняем новые продукты.
         if new_ingredients:
             for ingredient in new_ingredients:
-                Ingredients.objects.create(
+                IngredientInRecipe.objects.create(
                     recipe=instance,
                     ingredient=get_object_or_404(Ingredient, id=ingredient),
                     amount=new_ingredients[ingredient]

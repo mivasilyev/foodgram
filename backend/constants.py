@@ -1,18 +1,19 @@
 # Максимальная длина поля.
+TAG_MAX_LENGTH = 32
+SHORT_MAX_LENGTH = 64
+MID_MAX_LENGTH = 128
 MAX_LENGTH = 150
+LONG_MAX_LENGTH = 254
 # Транкатор слов.
 WORDS_TRUNCATE = 4
 # Список запрещенных имен пользователя.
 FORBIDDEN_NAMES = ['me', ]
-# Допустимый паттерн имени пользователя.
+# Допустимые паттерны.
 USERNAME_PATTERN = r'^[\w.@+-]+\Z'
+# TAG_PATTERN = r'^[-a-zA-Z0-9_]+$'
 # Аватар пользователя по умолчанию.
 DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
-
-# Символы для генерации короткой ссылки.
-# CHARACTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
-# Длина короткой ссылки.
-# SHORT_LINK_LENGTH = 6
+MIN_COOKING_MINUTES = 1
 
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'
