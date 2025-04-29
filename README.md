@@ -48,7 +48,7 @@ sudo docker exec foodgram-backend python manage.py loaddata tags.json ingredient
 
 ## Автор
 
-Михаил Васильев, студент Яндекс.Практикум, 2025. https://github.com/mivasilyev
+[Михаил Васильев](https://github.com/mivasilyev), студент Яндекс.Практикум, 2025.
 
 ## Благодарности
 

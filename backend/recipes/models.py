@@ -1,11 +1,12 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.utils.text import Truncator
 
 from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH,
                        MID_MAX_LENGTH, MIN_COOKING_MINUTES, SHORT_MAX_LENGTH,
-                       TAG_MAX_LENGTH, WORDS_TRUNCATE)
+                       TAG_MAX_LENGTH, TAG_PATTERN, USERNAME_PATTERN,
+                       WORDS_TRUNCATE)
 
 
 class User(AbstractUser):
@@ -17,11 +18,15 @@ class User(AbstractUser):
         unique=True
     )
     username = models.CharField(
-        verbose_name='Уникальный юзернейм', max_length=MAX_LENGTH, unique=True
+        verbose_name='Уникальный юзернейм',
+        max_length=MAX_LENGTH,
+        unique=True,
+        validators=(RegexValidator(regex=USERNAME_PATTERN), )
     )
     first_name = models.CharField(verbose_name='Имя', max_length=MAX_LENGTH)
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
     is_subscribed = models.ManyToManyField(
+        # Поле для создания связи с таблицей подписки.
         'self',
         through='Subscribe',
         verbose_name='Подписки',
@@ -90,7 +95,8 @@ class Tag(models.Model):
     slug = models.SlugField(
         verbose_name='Уникальный слаг',
         max_length=TAG_MAX_LENGTH,
-        unique=True
+        unique=True,
+        validators=(RegexValidator(regex=TAG_PATTERN), )
     )
 
     class Meta:

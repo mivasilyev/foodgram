@@ -10,7 +10,7 @@ WORDS_TRUNCATE = 4
 FORBIDDEN_NAMES = ['me', ]
 # Допустимые паттерны.
 USERNAME_PATTERN = r'^[\w.@+-]+\Z'
-# TAG_PATTERN = r'^[-a-zA-Z0-9_]+$'
+TAG_PATTERN = r'^[-a-zA-Z0-9_]+$'
 # Аватар пользователя по умолчанию.
 DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
 MIN_COOKING_MINUTES = 1

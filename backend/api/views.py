@@ -12,13 +12,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.serializers import (GetRecipeSerializer, IngredientSerializer,
-                             RecipeSerializer, ShortRecipeSerializer,
-                             SubscribeUserSerializer, TagSerializer)
+from api.permissions import IsAuthorOrReadOnly
+from api.serializers import (ExtendedUserSerializer, GetRecipeSerializer,
+                             IngredientSerializer, RecipeSerializer,
+                             ShortRecipeSerializer, SubscribeUserSerializer,
+                             TagSerializer)
 from constants import SHOPPING_CART_FILENAME
 from recipes.models import Ingredient, Recipe, Tag, User
-from recipes.permissions import IsAuthorOrReadOnly
-from recipes.serializers import CustomUserSerializer
 
 
 class CustomUserViewSet(UserViewSet):
@@ -290,7 +290,7 @@ class AvatarAPIView(APIView):
         """Обновление аватара пользователя."""
         if 'avatar' in request.data:
             user = self.request.user
-            serializer = CustomUserSerializer(
+            serializer = ExtendedUserSerializer(
                 user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
@@ -304,7 +304,7 @@ class AvatarAPIView(APIView):
     def delete(self, request):
         """Удаление аватара пользователя."""
         user = self.request.user
-        serializer = CustomUserSerializer(
+        serializer = ExtendedUserSerializer(
             user, data={'avatar': None}, partial=True)
         if serializer.is_valid():
             serializer.save()

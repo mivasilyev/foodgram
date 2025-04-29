@@ -65,7 +65,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 AUTH_USER_MODEL = 'recipes.User'
 
-# Настройки подключаемой базы определяются в .env
+# Настройки подключаемой базы определяются в .env (PostgreSQL или sqlite)
 if os.getenv('DB_TYPE_POSTGRES') == 'True':
     DATABASES = {
         'default': {
@@ -126,13 +126,14 @@ REST_FRAMEWORK = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
-        'user': ['recipes.permissions.CustomUserPermission'],
+        'user': ['api.permissions.UsersMeUserPermission'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'recipes.serializers.CustomUserCreateSerializer',
-        'user': 'recipes.serializers.CustomUserSerializer',
-        'current_user': 'recipes.serializers.CustomUserSerializer',
+        # 'user_create': 'api.serializers.AddValidationUserCreateSerializer',
+        'user_create': 'djoser.serializers.UserCreateSerializer',
+        'user': 'api.serializers.ExtendedUserSerializer',
+        'current_user': 'api.serializers.ExtendedUserSerializer',
     },
 }

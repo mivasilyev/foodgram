@@ -1,13 +1,64 @@
-import random
+import re
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
-# from constants import CHARACTERS, SHORT_LINK_LENGTH
-from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag, User
-from recipes.serializers import CustomUserSerializer
+from constants import FORBIDDEN_NAMES, MAX_LENGTH, USERNAME_PATTERN
+from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
+
+User = get_user_model()
+
+
+# class AddValidationUserCreateSerializer(UserCreateSerializer):
+#     """Доработанный сериализатор djoser для создания новых пользователей."""
+#     # Исходный сериализатор не подходит, т.к. не обеспечивает требуемую
+#     # тестами валидацию username.
+
+#     class Meta:
+#         model = User
+#         fields = (
+#             'email', 'id', 'username', 'first_name', 'last_name', 'password'
+#         )
+
+#     def validate_username(self, value):
+#         if value in FORBIDDEN_NAMES:
+#             raise ValidationError(
+#                 f'Имя пользователя {value} не разрешено.'
+#             )
+#         if not re.fullmatch(USERNAME_PATTERN, value):
+#             raise ValidationError(
+#                 'Имя пользователя может содержать буквы, цифры и знаки '
+#                 '@/./+/-/_.'
+#             )
+#         if len(value) > MAX_LENGTH:
+#             raise ValidationError(
+#                 'В имени пользователя должно быть не более '
+#                 f'{MAX_LENGTH} символов.'
+#             )
+#         return value
+
+
+class ExtendedUserSerializer(UserSerializer):
+    """Доработанный сериализатор djoser для пользователей."""
+
+    is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = UserSerializer.Meta.fields + ('is_subscribed', 'avatar')
+
+    def get_is_subscribed(self, to_user):
+        if self.context:
+            user = self.context.get('request').user
+            if user.is_authenticated:
+                return to_user in user.is_subscribed.all()
+        return False
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -54,7 +105,7 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
 
     ingredients = IngredientInRecipeSerializer(many=True)
     image = Base64ImageField()
-    author = CustomUserSerializer(required=False)
+    author = ExtendedUserSerializer(required=False)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -224,7 +275,7 @@ class RecipeSerializer(BaseRecipeSerializer):
         return instance
 
 
-class SubscribeUserSerializer(CustomUserSerializer):
+class SubscribeUserSerializer(ExtendedUserSerializer):
     """Сериализатор для подписки."""
 
     recipes = serializers.SerializerMethodField()
