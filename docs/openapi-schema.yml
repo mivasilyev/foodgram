@@ -2,6 +2,7 @@ openapi: 3.0.2
 info:
   title: 'Foodgram'
   version: ''
+
 paths:
   /api/users/:
     get:
@@ -740,6 +741,7 @@ paths:
           $ref: '#/components/responses/AuthenticationError'
       tags:
         - Пользователи
+
 components:
   schemas:
     User:

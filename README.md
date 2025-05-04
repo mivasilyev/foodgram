@@ -29,14 +29,17 @@ nano .env
 ```
 sudo docker compose up --build
 ```
-в отдельном окне терминала выполнить миграции и импорт json-фикстур с продуктами и тегами
+в отдельном окне терминала выполнить миграции и импорт json-фикстур с продуктами и тегами, сбор и копирование статики
 ```
 sudo docker exec foodgram-backend python manage.py migrate
 sudo docker exec foodgram-backend python manage.py loaddata tags.json ingredients.json
+sudo docker exec foodgram-backend python manage.py collectstatic
+sudo docker exec foodgram-backend cp -r /app/backend_static/. /backend_static/static/
+
 ```
 После запуска проект доступен [здесь](http://localhost/), админ-зона [здесь](http://localhost/admin/).
 
-Деплой на https://foodg.run.place/.
+[Деплой на](https://foodg.run.place/), [админ-зона](https://foodg.run.place/admin/).
 
 ## Использованные технологии
 

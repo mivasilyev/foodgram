@@ -3,8 +3,9 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.utils.text import Truncator
 
-from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH,
-                       MID_MAX_LENGTH, MIN_COOKING_MINUTES, SHORT_MAX_LENGTH,
+from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH,  # CONTINUATION
+                       MAX_LENGTH, MID_MAX_LENGTH, MIN_COOKING_MINUTES,
+                       SIMBOLS_LIMIT, SIMBOLS_TRUNCATE, SHORT_MAX_LENGTH,
                        TAG_MAX_LENGTH, TAG_PATTERN, USERNAME_PATTERN,
                        WORDS_TRUNCATE)
 
@@ -43,6 +44,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('username', )
 
     def __str__(self):
         return self.username
@@ -54,13 +56,13 @@ class Subscribe(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='follows',
         verbose_name='Пользователь'
     )
     subscribed = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='followers',
         verbose_name='Подписан на'
     )
 
@@ -103,9 +105,10 @@ class Tag(models.Model):
         default_related_name = 'tags'
         verbose_name = 'тег'
         verbose_name_plural = 'Список тегов'
+        ordering = ('name', )
 
     def __str__(self):
-        return Truncator(self.name).words(WORDS_TRUNCATE)
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -122,9 +125,19 @@ class Ingredient(models.Model):
         default_related_name = 'ingredient'
         verbose_name = 'продукт'
         verbose_name_plural = 'Список продуктов'
+        ordering = ('name', )
+        constraints = [
+            # Ингредиент записан один раз.
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_in_ingredients'
+            )
+        ]
 
     def __str__(self):
-        return Truncator(self.name).words(WORDS_TRUNCATE)
+        return self.name if len(self.name) <= SIMBOLS_LIMIT else (
+            f'{self.name[:SIMBOLS_TRUNCATE]}...'
+        )
 
 
 class Recipe(models.Model):
@@ -257,4 +270,4 @@ class ShoppingCart(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user.username} - {self.recipe.title}'
+        return f'{self.user.username} - {self.recipe.name}'

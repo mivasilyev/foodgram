@@ -1,21 +1,92 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
+from django.utils.safestring import mark_safe
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, User,
                             Recipe, ShoppingCart, Subscribe, Tag)
+from constants import ADMIN_PIC_DOTS
 
 admin.site.unregister(Group)
 
+
+class RecipeFilter(admin.SimpleListFilter):
+    title = 'Наличие рецептов'
+    parameter_name = 'recipes'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('no', 'Нет рецептов'),
+            ('yes', 'Есть рецепты'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'no':
+            return queryset.filter(recipes__exact=None)
+        if self.value() == 'yes':
+            return queryset.exclude(recipes__exact=None)
+
+
+class FollowsFilter(admin.SimpleListFilter):
+    title = 'Пользователь подписан'
+    parameter_name = 'is_subscribed'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('no', 'Нет подписок'),
+            ('yes', 'Есть подписки'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'no':
+            return queryset.filter(is_subscribed__exact=None)
+        if self.value() == 'yes':
+            return queryset.exclude(is_subscribed__exact=None)
+
+
+class RecipesCountMixin:
+    # Подсчет количества рецептов, связанных с объектом смежной модели.
+    counter_description = 'Рецептов'
+
+    @admin.display(description=counter_description)
+    def recipes_count(self, obj):
+        return obj.recipes.all().count()
+
+
 @admin.register(User)
-class MyUserAdmin(UserAdmin):
+class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
     """Админка для пользователей."""
 
     list_display = (
-        'username', 'email', 'first_name', 'last_name', 'is_staff', 'avatar'
+        'avatar_preview', 'id', 'username', 'name', 'email', 'is_staff',
+        'recipes_count', 'subscribed_count', 'followers_count'
     )
+    list_display_links = ('username', )
+    readonly_fields = ['avatar_preview']
     search_fields = ('email', 'username')
-    list_filter = UserAdmin.list_filter + ('first_name',)
+    list_filter = UserAdmin.list_filter + (
+        'first_name', RecipeFilter, FollowsFilter
+    )
+
+    @admin.display(description='ФИО')
+    def name(self, user):
+        return f'{user.first_name} {user.last_name}'
+
+    @admin.display(description='Подписок')
+    def subscribed_count(self, user):
+        return user.follows.all().count()
+
+    @admin.display(description='Подписчиков')
+    def followers_count(self, user):
+        return user.followers.all().count()
+
+    @mark_safe
+    @admin.display(description='Аватар')
+    def avatar_preview(self, user):
+        return (
+            f'<img src="{user.avatar}" width="{ADMIN_PIC_DOTS}" '
+            f'height="{ADMIN_PIC_DOTS}"/>'
+        )
 
 
 @admin.register(Subscribe)
@@ -34,39 +105,71 @@ class RecipeIngredientsInline(admin.StackedInline):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(RecipesCountMixin, admin.ModelAdmin):
     """Админка для тегов."""
 
-    list_display = ('name', 'slug')
+    list_display = ('name', 'slug', 'recipes_count')
     search_fields = ('name', 'slug')
-
-
-@admin.register(Recipe)
-class RecipeAdmin(admin.ModelAdmin):
-    """Админка для рецептов."""
-
-    list_display = ('author', 'name')
-    fields = (
-        'name', 'favorited_count', 'author', 'image', 'text', 'tags',
-        'cooking_time', 'pub_date',
-    )
-    readonly_fields = ('favorited_count', 'pub_date')
-    search_fields = ('author__username', 'name',)
-    list_filter = ('tags',)
-    inlines = (RecipeIngredientsInline,)
-
-    @admin.display(description='В избранном')
-    def favorited_count(self, recipe):
-        return recipe.favorite.all().count()
+    counter_description = 'Рецептов с тегом'
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     """Админка для продуктов."""
 
-    list_display = ('name', 'measurement_unit',)
+    list_display = ('name', 'measurement_unit', 'recipes_count')
     list_display_links = ('name',)
     search_fields = ('name',)
+
+    @admin.display(description='Рецептов с ингредиентом')
+    # Код подсчета рецептов не совпадает с аналогичным для тегов.
+    def recipes_count(self, obj):
+        return obj.ingredients.all().count()
+
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    """Админка для рецептов."""
+
+    list_display = (
+        'image_preview', 'id', 'name', 'cooking_time', 'author', 'view_tags',
+        'favorited_count', 'view_ingredients'
+    )
+    fields = (
+        'name', 'favorited_count', 'author', 'text', 'tags',
+        'cooking_time', 'pub_date',
+    )
+    list_display_links = ('name', )
+    readonly_fields = ('image_preview', 'favorited_count', 'pub_date')
+    search_fields = ('author__username', 'name', 'tags__name')
+    list_filter = ('tags', 'author')
+    inlines = (RecipeIngredientsInline, )
+
+    @admin.display(description='В избранном')
+    def favorited_count(self, recipe):
+        return recipe.favorite.all().count()
+
+    @mark_safe
+    @admin.display(description='Теги')
+    def view_tags(self, recipe):
+        tags_qs = recipe.tags.all()
+        tags = [tag.name for tag in tags_qs]
+        return ', '.join(tags)
+
+    @mark_safe
+    @admin.display(description='Продукты')
+    def view_ingredients(self, recipe):
+        ingredients_qs = recipe.ingredients.all()
+        ingredients = [ingr.ingredient.name for ingr in ingredients_qs]
+        return ', '.join(ingredients)
+
+    @mark_safe
+    @admin.display(description='Превью')
+    def image_preview(self, recipe):
+        return (
+            f'<img src="{recipe.image}" width="{ADMIN_PIC_DOTS}" '
+            f'height="{ADMIN_PIC_DOTS}"/>'
+        )
 
 
 @admin.register(Favorite)

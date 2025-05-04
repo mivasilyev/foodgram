@@ -14,33 +14,33 @@ from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 User = get_user_model()
 
 
-# class AddValidationUserCreateSerializer(UserCreateSerializer):
-#     """Доработанный сериализатор djoser для создания новых пользователей."""
-#     # Исходный сериализатор не подходит, т.к. не обеспечивает требуемую
-#     # тестами валидацию username.
+class AddValidationUserCreateSerializer(UserCreateSerializer):
+    """Доработанный сериализатор djoser для создания новых пользователей."""
+    # Исходный сериализатор не подходит, т.к. не обеспечивает требуемую
+    # валидацию на запрещенные имена.
 
-#     class Meta:
-#         model = User
-#         fields = (
-#             'email', 'id', 'username', 'first_name', 'last_name', 'password'
-#         )
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name', 'password'
+        )
 
-#     def validate_username(self, value):
-#         if value in FORBIDDEN_NAMES:
-#             raise ValidationError(
-#                 f'Имя пользователя {value} не разрешено.'
-#             )
-#         if not re.fullmatch(USERNAME_PATTERN, value):
-#             raise ValidationError(
-#                 'Имя пользователя может содержать буквы, цифры и знаки '
-#                 '@/./+/-/_.'
-#             )
-#         if len(value) > MAX_LENGTH:
-#             raise ValidationError(
-#                 'В имени пользователя должно быть не более '
-#                 f'{MAX_LENGTH} символов.'
-#             )
-#         return value
+    def validate_username(self, value):
+        if value in FORBIDDEN_NAMES:
+            raise ValidationError(
+                f'Имя пользователя {value} не разрешено.'
+            )
+        if not re.fullmatch(USERNAME_PATTERN, value):
+            raise ValidationError(
+                'Имя пользователя может содержать буквы, цифры и знаки '
+                '@/./+/-/_.'
+            )
+        if len(value) > MAX_LENGTH:
+            raise ValidationError(
+                'В имени пользователя должно быть не более '
+                f'{MAX_LENGTH} символов.'
+            )
+        return value
 
 
 class ExtendedUserSerializer(UserSerializer):
