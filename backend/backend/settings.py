@@ -66,7 +66,15 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 AUTH_USER_MODEL = 'recipes.User'
 
 # Настройки подключаемой базы определяются в .env (PostgreSQL или sqlite)
-if os.getenv('DB_TYPE_POSTGRES') == 'True':
+# По дефолту база sqlite.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+# Если есть настройка в .env, то переключаем на PostgreSQL.
+if os.getenv('DB_TYPE_POSTGRES') is True:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -75,13 +83,6 @@ if os.getenv('DB_TYPE_POSTGRES') == 'True':
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'db'),
             'PORT': os.getenv('DB_PORT', 5432)
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -102,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

@@ -1,13 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.utils.text import Truncator
 
-from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH,  # CONTINUATION
-                       MAX_LENGTH, MID_MAX_LENGTH, MIN_COOKING_MINUTES,
-                       SIMBOLS_LIMIT, SIMBOLS_TRUNCATE, SHORT_MAX_LENGTH,
-                       TAG_MAX_LENGTH, TAG_PATTERN, USERNAME_PATTERN,
-                       WORDS_TRUNCATE)
+from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH,
+                       MID_MAX_LENGTH, MIN_COOKING_MINUTES,
+                       MIN_INGREDIENT_AMOUNT, SHORT_MAX_LENGTH, TAG_MAX_LENGTH,
+                       TAG_PATTERN, USERNAME_PATTERN)
 
 
 class User(AbstractUser):
@@ -135,9 +133,10 @@ class Ingredient(models.Model):
         ]
 
     def __str__(self):
-        return self.name if len(self.name) <= SIMBOLS_LIMIT else (
-            f'{self.name[:SIMBOLS_TRUNCATE]}...'
-        )
+        return self.name
+        # return self.name if len(self.name) <= SIMBOLS_LIMIT else (
+        #     f'{self.name[:SIMBOLS_TRUNCATE]}...'
+        # )
 
 
 class Recipe(models.Model):
@@ -145,7 +144,7 @@ class Recipe(models.Model):
 
     author = models.ForeignKey(
         User,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         verbose_name='Автор'
     )
     name = models.CharField(
@@ -185,7 +184,7 @@ class Recipe(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return Truncator(self.name).words(WORDS_TRUNCATE)
+        return self.name
 
 
 class IngredientInRecipe(models.Model):
@@ -197,12 +196,16 @@ class IngredientInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE, verbose_name='Продукт'
     )
-    amount = models.FloatField(verbose_name='Мера')
+    amount = models.FloatField(
+        verbose_name='Мера',
+        validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT)]
+    )
 
     class Meta:
         verbose_name = 'продукты в рецепте'
         verbose_name_plural = 'Продукты в рецепте'
         default_related_name = 'ingredients'
+        ordering = ('ingredient__name', )
         constraints = [
             # Продукт входит в рецепт один раз.
             models.UniqueConstraint(
@@ -216,8 +219,8 @@ class IngredientInRecipe(models.Model):
                 f'{self.ingredient.measurement_unit}')
 
 
-class Favorite(models.Model):
-    """Добавление рецептов в избранное."""
+class BaseCart(models.Model):
+    """Базовый класс для избранного и корзины."""
 
     user = models.ForeignKey(
         User,
@@ -227,42 +230,13 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Избранное'
+        verbose_name='Рецепт'
     )
 
     class Meta:
-        verbose_name = 'избранное'
-        verbose_name_plural = 'Избранное'
-        default_related_name = 'favorite'
+        abstract = True
         constraints = [
-            # Запрещено повторное добавление в избранное.
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite'
-            )
-        ]
-
-    def __str__(self):
-        return f'{self.user.username} - {self.recipe.name}'
-
-
-class ShoppingCart(models.Model):
-    """Добавление рецептов в список покупок."""
-
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        related_name='cart', verbose_name='Пользователь')
-    recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
-        related_name='cart', verbose_name='Корзина'
-    )
-
-    class Meta:
-        verbose_name = 'корзина'
-        verbose_name_plural = 'Корзины'
-        default_related_name = 'shopping_cart'
-        constraints = [
-            # Запрещено повторное добавление в корзину.
+            # Запрещено повторное добавление.
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
                 name='unique_in_cart'
@@ -271,3 +245,21 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.recipe.name}'
+
+
+class Favorite(BaseCart):
+    """Добавление рецептов в избранное."""
+
+    class Meta:
+        verbose_name = 'избранное'
+        verbose_name_plural = 'Избранное'
+        default_related_name = 'favorites'
+
+
+class ShoppingCart(BaseCart):
+    """Добавление рецептов в список покупок."""
+
+    class Meta:
+        verbose_name = 'корзина'
+        verbose_name_plural = 'Корзины'
+        default_related_name = 'shopping_ingredients'

@@ -8,7 +8,8 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from api.pagination import CustomRecipePagination
-from constants import FORBIDDEN_NAMES, MAX_LENGTH, USERNAME_PATTERN
+from constants import (FORBIDDEN_NAMES, MAX_LENGTH, MIN_INGREDIENT_AMOUNT,
+                       USERNAME_PATTERN)
 from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 User = get_user_model()
@@ -154,7 +155,7 @@ class RecipeSerializer(BaseRecipeSerializer):
                 raise serializers.ValidationError(
                     f'Продукта {ingredient} нет в списке.'
                 )
-            if amount < 1:
+            if amount < MIN_INGREDIENT_AMOUNT:
                 raise serializers.ValidationError(
                     'Слишком мало продукта.'
                 )
@@ -208,22 +209,11 @@ class RecipeSerializer(BaseRecipeSerializer):
             )
         return data
 
-    # def make_new_short_link(self):
-    #     # Создание короткой ссылки.
-    #     while True:
-    #         short_link = ''.join(
-    #             random.choices(CHARACTERS, k=SHORT_LINK_LENGTH)
-    #         )
-    #         if not Recipe.objects.filter(short_link=short_link).exists():
-    #             break
-    #     return short_link
-
     def create(self, validated_data):
         # Создаем рецепт.
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe(**validated_data)
-        # recipe.short_link = self.make_new_short_link()
         recipe.save()
         # Устанавливаем связи с продуктами.
         for ingredient in ingredients:

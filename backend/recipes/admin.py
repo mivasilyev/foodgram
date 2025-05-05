@@ -113,18 +113,33 @@ class TagAdmin(RecipesCountMixin, admin.ModelAdmin):
     counter_description = 'Рецептов с тегом'
 
 
+class UsedIngredientFilter(admin.SimpleListFilter):
+    title = 'Используются в рецептах'
+    parameter_name = 'recipes_count'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Только используемые'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.exclude(ingredients__exact=None)
+
+
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     """Админка для продуктов."""
 
     list_display = ('name', 'measurement_unit', 'recipes_count')
     list_display_links = ('name',)
-    search_fields = ('name',)
+    search_fields = ('name', 'measurement_unit')
+    list_filter = ('measurement_unit', UsedIngredientFilter)
 
     @admin.display(description='Рецептов с ингредиентом')
     # Код подсчета рецептов не совпадает с аналогичным для тегов.
-    def recipes_count(self, obj):
-        return obj.ingredients.all().count()
+    def recipes_count(self, recipe):
+        return recipe.ingredients.all().count()
 
 
 @admin.register(Recipe)
@@ -147,7 +162,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe):
-        return recipe.favorite.all().count()
+        return recipe.favorites.all().count()
 
     @mark_safe
     @admin.display(description='Теги')
@@ -172,7 +187,7 @@ class RecipeAdmin(admin.ModelAdmin):
         )
 
 
-@admin.register(Favorite)
+@admin.register(Favorite, ShoppingCart)
 class FavoriteAdmin(admin.ModelAdmin):
     """Админка для избранного."""
 
@@ -180,9 +195,9 @@ class FavoriteAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'recipe__name')
 
 
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
-    """Админка для корзины покупок."""
+# @admin.register(ShoppingCart)
+# class ShoppingCartAdmin(admin.ModelAdmin):
+#     """Админка для корзины покупок."""
 
-    list_display = ('user', 'recipe')
-    search_fields = ('user__username', 'recipe__name')
+#     list_display = ('user', 'recipe')
+#     search_fields = ('user__username', 'recipe__name')

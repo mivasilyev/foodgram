@@ -8,11 +8,11 @@ LONG_MAX_LENGTH = 254
 # Размеры картинки для админки.
 ADMIN_PIC_DOTS = 50
 
-# Транкатор слов.
-WORDS_TRUNCATE = 4
-SIMBOLS_LIMIT = 15
-SIMBOLS_TRUNCATE = 12
-# CONTINUATION = '...'
+# # Транкатор слов.
+# WORDS_TRUNCATE = 4
+# SIMBOLS_LIMIT = 15
+# SIMBOLS_TRUNCATE = 12
+# # CONTINUATION = '...'
 
 # Список запрещенных имен пользователя.
 FORBIDDEN_NAMES = ['me', ]
@@ -23,6 +23,7 @@ TAG_PATTERN = r'^[-a-zA-Z0-9_]+$'
 DEFAULT_USER_AVATAR = 'user_avatars/default_user_avatar.jpg'
 # Минимальное время готовки.
 MIN_COOKING_MINUTES = 1
-
+# Минимальное количество ингредиента.
+MIN_INGREDIENT_AMOUNT = 1
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'
