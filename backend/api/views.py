@@ -176,6 +176,32 @@ class RecipeViewSet(ModelViewSet):
             status=status.HTTP_200_OK
         )
 
+    @action(methods=["post"], detail=True)
+    def favorite(self, request, pk):
+        """Добавляем рецепт в избранное."""
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        if recipe not in user.is_favorited.all():
+            recipe.is_favorited.add(user)
+            if recipe in user.is_favorited.all():
+                serializer = ShortRecipeSerializer(recipe)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=["delete"], detail=True)
+    def delete(self, request, pk):
+        """Удаляем рецепт из избранного."""
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        if recipe in user.is_favorited.all():
+            recipe.is_favorited.remove(user)
+            if recipe not in user.is_favorited.all():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 # ============================================================================
 class GetShortLinkAPIView(APIView):
@@ -202,33 +228,7 @@ def short_link_redirect(request, short_link):
     redir_link = f'/recipes/{recipe.id}/'
     full_link = request.build_absolute_uri(redir_link)
     return HttpResponsePermanentRedirect(full_link)
-# ============================================================================
-
-
-class FavoriteAPIView(APIView):
-    """Класс для сохранения рецепта в избранное и удаления из избранного."""
-
-    def post(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        if recipe not in user.is_favorited.all():
-            recipe.is_favorited.add(user)
-            if recipe in user.is_favorited.all():
-                serializer = ShortRecipeSerializer(recipe)
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        if recipe in user.is_favorited.all():
-            recipe.is_favorited.remove(self.request.user)
-            if recipe not in user.is_favorited.all():
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+# =================================================
 
 
 class ShoppingCartAPIView(APIView):

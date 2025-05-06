@@ -2,7 +2,7 @@ from django.urls import include, path, re_path
 from rest_framework.routers import SimpleRouter
 
 from api.views import (AvatarAPIView, CustomUserViewSet,
-                       DownloadShoppingCartView, FavoriteAPIView,
+                       DownloadShoppingCartView,
                        GetShortLinkAPIView, IngredientViewSet, RecipeViewSet,
                        ShoppingCartAPIView, TagViewSet)
 
@@ -14,8 +14,6 @@ router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
 
 recipes_urls = [
-    path('<int:id>/favorite/', FavoriteAPIView.as_view()),
-    path('<int:id>/delete/', FavoriteAPIView.as_view()),
     path('<int:id>/shopping_cart/', ShoppingCartAPIView.as_view()),
     path('<int:id>/get-link/', GetShortLinkAPIView.as_view()),
     path('download_shopping_cart/', DownloadShoppingCartView.as_view()),
