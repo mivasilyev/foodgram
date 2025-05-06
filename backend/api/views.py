@@ -226,22 +226,56 @@ class RecipeViewSet(ModelViewSet):
                     return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
-# ============================================================================
-
-
-class GetShortLinkAPIView(APIView):
-    """Получение короткой ссылки."""
-
-    permission_classes = (AllowAny,)
-
-    def get(self, request, id):
-        recipe = get_object_or_404(Recipe, id=id)
+    @action(methods=["get"], detail=True, url_path="get-link",
+            permission_classes=[AllowAny])
+    def get_link(self, request, pk):
+        """Получение короткой ссылки."""
+        recipe = get_object_or_404(Recipe, id=pk)
         domain = get_current_site(request).domain
         # short_link = f'{domain}/s/{recipe.short_link}/'
         short_link = f'{domain}/s/{hex(recipe.id)}'
         response = {'short-link': short_link}
         return Response(response, status=status.HTTP_200_OK)
+
+    @action(methods=["get"], detail=False)
+    def download_shopping_cart(self, request):
+        """Выгрузка корзины покупок файлом."""
+        user = self.request.user
+        queryset = user.is_in_shopping_cart.all()
+        shopping_dict = {}
+        for recipe in queryset:
+            recipe_serializer = GetRecipeSerializer(recipe)
+            for ingred in recipe_serializer.data['ingredients']:
+                key = f"{ingred['name']} ({ingred['measurement_unit']})"
+                value = ingred['amount']
+                if key in shopping_dict:
+                    shopping_dict[key] += value
+                else:
+                    shopping_dict[key] = value
+        response = HttpResponse(content_type='text/plain')
+        response.write('<p>Список покупок:</p><p></p>')
+        for position in shopping_dict:
+            response.write(f'<p>{position} - {shopping_dict[position]}</p>')
+        response['Content-Disposition'] = 'attachment; filename={0}'.format(
+            SHOPPING_CART_FILENAME
+        )
+        return response
+
+# ============================================================================
+
+
+# class GetShortLinkAPIView(APIView):
+#     """Получение короткой ссылки."""
+
+#     permission_classes = (AllowAny,)
+
+#     def get(self, request, id):
+#         recipe = get_object_or_404(Recipe, id=id)
+#         domain = get_current_site(request).domain
+#         # short_link = f'{domain}/s/{recipe.short_link}/'
+#         short_link = f'{domain}/s/{hex(recipe.id)}'
+#         response = {'short-link': short_link}
+#         return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -282,30 +316,30 @@ def short_link_redirect(request, short_link):
 #         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-class DownloadShoppingCartView(APIView):
-    """Выгрузка корзины покупок файлом."""
+# class DownloadShoppingCartView(APIView):
+#     """Выгрузка корзины покупок файлом."""
 
-    def get(self, request):
-        user = self.request.user
-        queryset = user.is_in_shopping_cart.all()
-        shopping_dict = {}
-        for recipe in queryset:
-            recipe_serializer = GetRecipeSerializer(recipe)
-            for ingred in recipe_serializer.data['ingredients']:
-                key = f"{ingred['name']} ({ingred['measurement_unit']})"
-                value = ingred['amount']
-                if key in shopping_dict:
-                    shopping_dict[key] += value
-                else:
-                    shopping_dict[key] = value
-        response = HttpResponse(content_type='text/plain')
-        response.write('<p>Список покупок:</p><p></p>')
-        for position in shopping_dict:
-            response.write(f'<p>{position} - {shopping_dict[position]}</p>')
-        response['Content-Disposition'] = 'attachment; filename={0}'.format(
-            SHOPPING_CART_FILENAME
-        )
-        return response
+#     def get(self, request):
+#         user = self.request.user
+#         queryset = user.is_in_shopping_cart.all()
+#         shopping_dict = {}
+#         for recipe in queryset:
+#             recipe_serializer = GetRecipeSerializer(recipe)
+#             for ingred in recipe_serializer.data['ingredients']:
+#                 key = f"{ingred['name']} ({ingred['measurement_unit']})"
+#                 value = ingred['amount']
+#                 if key in shopping_dict:
+#                     shopping_dict[key] += value
+#                 else:
+#                     shopping_dict[key] = value
+#         response = HttpResponse(content_type='text/plain')
+#         response.write('<p>Список покупок:</p><p></p>')
+#         for position in shopping_dict:
+#             response.write(f'<p>{position} - {shopping_dict[position]}</p>')
+#         response['Content-Disposition'] = 'attachment; filename={0}'.format(
+#             SHOPPING_CART_FILENAME
+#         )
+#         return response
 
 
 class AvatarAPIView(APIView):
