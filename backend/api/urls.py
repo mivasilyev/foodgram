@@ -1,8 +1,8 @@
 from django.urls import include, path, re_path
 from rest_framework.routers import SimpleRouter
 
-from api.views import (AvatarAPIView, CustomUserViewSet,
-                    #    DownloadShoppingCartView,
+from api.views import (CustomUserViewSet,
+                    #    DownloadShoppingCartView, AvatarAPIView
                        IngredientViewSet, RecipeViewSet,
                        TagViewSet)  # ShoppingCartAPIView GetShortLinkAPIView
 
@@ -21,7 +21,7 @@ router.register('users', CustomUserViewSet)
 
 urlpatterns = [
     # path('recipes/', include(recipes_urls)),
-    path('users/me/avatar/', AvatarAPIView.as_view()),
+    # path('users/me/avatar/', AvatarAPIView.as_view()),
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     re_path(r'^auth/', include('djoser.urls.authtoken')),

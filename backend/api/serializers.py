@@ -7,7 +7,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from api.pagination import CustomRecipePagination
+from api.pagination import RecipePagination
 from constants import (FORBIDDEN_NAMES, MAX_LENGTH, MIN_INGREDIENT_AMOUNT,
                        USERNAME_PATTERN)
 from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
@@ -283,7 +283,7 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
         # Вывод рецептов для пользователя делаем через кастомный пагинатор
         # для ограничения количества рецептов в выдаче.
         recipes = to_user.recipes.all()
-        paginator = CustomRecipePagination()
+        paginator = RecipePagination()
         result_page = paginator.paginate_queryset(
             recipes, self.context['request']
         )

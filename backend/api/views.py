@@ -73,6 +73,35 @@ class CustomUserViewSet(UserViewSet):
         )
         return Response(serializer.data)
 
+    @action(["put", "delete"], detail=False, url_path=r'me/avatar')
+    def avatar(self, request, *args, **kwargs):
+        """Работа с аватаром."""
+        if request.method == 'PUT':
+            # Обновление аватара пользователя.
+            if 'avatar' in request.data:
+                user = self.request.user
+                serializer = ExtendedUserSerializer(
+                    user, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    response = {'avatar': serializer.data['avatar']}
+                    return Response(response, status=status.HTTP_200_OK)
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE':
+            # Удаление аватара пользователя.
+            user = self.request.user
+            serializer = ExtendedUserSerializer(
+                user, data={'avatar': None}, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class TagViewSet(ReadOnlyModelViewSet):
     """Вьюсет для получения тегов."""
@@ -342,30 +371,30 @@ def short_link_redirect(request, short_link):
 #         return response
 
 
-class AvatarAPIView(APIView):
-    """Работа с аватаром."""
+# class AvatarAPIView(APIView):
+#     """Работа с аватаром."""
 
-    def put(self, request):
-        """Обновление аватара пользователя."""
-        if 'avatar' in request.data:
-            user = self.request.user
-            serializer = ExtendedUserSerializer(
-                user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                response = {'avatar': serializer.data['avatar']}
-                return Response(response, status=status.HTTP_200_OK)
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+#     def put(self, request):
+#         """Обновление аватара пользователя."""
+#         if 'avatar' in request.data:
+#             user = self.request.user
+#             serializer = ExtendedUserSerializer(
+#                 user, data=request.data, partial=True)
+#             if serializer.is_valid():
+#                 serializer.save()
+#                 response = {'avatar': serializer.data['avatar']}
+#                 return Response(response, status=status.HTTP_200_OK)
+#             return Response(
+#                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
+#             )
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request):
-        """Удаление аватара пользователя."""
-        user = self.request.user
-        serializer = ExtendedUserSerializer(
-            user, data={'avatar': None}, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def delete(self, request):
+#         """Удаление аватара пользователя."""
+#         user = self.request.user
+#         serializer = ExtendedUserSerializer(
+#             user, data={'avatar': None}, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

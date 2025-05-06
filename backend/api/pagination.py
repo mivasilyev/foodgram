@@ -7,5 +7,5 @@ class Pagination(PageNumberPagination):
     page_size_query_param = 'limit'
 
 
-class CustomRecipePagination(LimitOffsetPagination):
+class RecipePagination(LimitOffsetPagination):
     limit_query_param = 'recipes_limit'
