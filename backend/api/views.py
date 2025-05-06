@@ -202,8 +202,34 @@ class RecipeViewSet(ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=["post", "delete"], detail=True)
+    def shopping_cart(self, request, pk):
+        """Работа с корзиной покупок."""
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+
+        if request.method == 'POST':
+            if recipe not in user.is_in_shopping_cart.all():
+                recipe.is_in_shopping_cart.add(user)
+                if recipe in user.is_in_shopping_cart.all():
+                    serializer = ShortRecipeSerializer(recipe)
+                    return Response(
+                        data=serializer.data,
+                        status=status.HTTP_201_CREATED
+                    )
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE':
+            if recipe in user.is_in_shopping_cart.all():
+                recipe.is_in_shopping_cart.remove(user)
+                if recipe not in user.is_in_shopping_cart.all():
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 # ============================================================================
+
+
 class GetShortLinkAPIView(APIView):
     """Получение короткой ссылки."""
 
@@ -223,7 +249,6 @@ class GetShortLinkAPIView(APIView):
 def short_link_redirect(request, short_link):
     """Редирект коротких ссылок на рецепт."""
     recipe_id = int(short_link, 16)
-    # recipe = get_object_or_404(Recipe, short_link=short_link)
     recipe = get_object_or_404(Recipe, id=recipe_id)
     redir_link = f'/recipes/{recipe.id}/'
     full_link = request.build_absolute_uri(redir_link)
@@ -231,30 +256,30 @@ def short_link_redirect(request, short_link):
 # =================================================
 
 
-class ShoppingCartAPIView(APIView):
-    """Класс для добавления рецепта в корзину покупок и удаления."""
+# class ShoppingCartAPIView(APIView):
+#     """Класс для добавления рецепта в корзину покупок и удаления."""
 
-    def post(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        if recipe not in user.is_in_shopping_cart.all():
-            recipe.is_in_shopping_cart.add(user)
-            if recipe in user.is_in_shopping_cart.all():
-                serializer = ShortRecipeSerializer(recipe)
-                return Response(
-                    data=serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request, id):
+#         user = self.request.user
+#         recipe = get_object_or_404(Recipe, id=id)
+#         if recipe not in user.is_in_shopping_cart.all():
+#             recipe.is_in_shopping_cart.add(user)
+#             if recipe in user.is_in_shopping_cart.all():
+#                 serializer = ShortRecipeSerializer(recipe)
+#                 return Response(
+#                     data=serializer.data,
+#                     status=status.HTTP_201_CREATED
+#                 )
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, id):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, id=id)
-        if recipe in user.is_in_shopping_cart.all():
-            recipe.is_in_shopping_cart.remove(user)
-            if recipe not in user.is_in_shopping_cart.all():
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+#     def delete(self, request, id):
+#         user = self.request.user
+#         recipe = get_object_or_404(Recipe, id=id)
+#         if recipe in user.is_in_shopping_cart.all():
+#             recipe.is_in_shopping_cart.remove(user)
+#             if recipe not in user.is_in_shopping_cart.all():
+#                 return Response(status=status.HTTP_204_NO_CONTENT)
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class DownloadShoppingCartView(APIView):
