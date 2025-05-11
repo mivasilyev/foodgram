@@ -21,7 +21,7 @@ from constants import SHOPPING_CART_FILENAME
 from recipes.models import Ingredient, Recipe, Tag, User
 
 
-class CustomUserViewSet(UserViewSet):
+class ExtendedUserViewSet(UserViewSet):
     """Расширение вьюсета пользователя djoser для работы с подпиской."""
 
     @action(["post", "delete"], detail=True)
