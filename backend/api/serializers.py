@@ -3,15 +3,17 @@ import re
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
-from api.pagination import RecipePagination
-from constants import (FORBIDDEN_NAMES, MAX_LENGTH, MIN_INGREDIENT_AMOUNT,
+# from api.pagination import RecipePagination
+from constants import (FORBIDDEN_NAMES, MAX_LENGTH,  # MIN_INGREDIENT_AMOUNT,
                        USERNAME_PATTERN)
-from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
+from recipes.models import (Ingredient, IngredientInRecipe, Recipe, Subscribe,
+                            Tag)
 
 User = get_user_model()
 
@@ -230,27 +232,45 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'В рецепте нужны продукты.'
             )
         return data
+# ===========================================
+
+    def fill_ingredients(self, recipe, ingredients):
+        """Заполняем ингредиенты в рецепт."""
+        # Устанавливаем связи с продуктами.
+        ingredient_list = []
+        for ingredient in ingredients:
+            ingredient_list.append(
+                IngredientInRecipe(
+                    recipe=recipe,
+                    ingredient=Ingredient.objects.get(
+                        id=ingredient['ingredient']['id']),
+                    amount=ingredient['amount']
+                )
+            )
+        IngredientInRecipe.objects.bulk_create(ingredient_list)
+# =========================================================
 
     def create(self, validated_data):
         # Создаем рецепт.
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = super().create(validated_data)
+        self.fill_ingredients(recipe, ingredients)
 
-        # Устанавливаем связи с продуктами.
-        ingredient_list = []
-        for ingredient in ingredients:
-            # current_ingredient = get_object_or_404(
-            #     Ingredient,
-            #     id=ingredient['ingredient']['id']
-            # )
-            ingredient_list.append(IngredientInRecipe(  # .objects.create
-                recipe=recipe,
-                ingredient=Ingredient.objects.get(
-                    id=ingredient['ingredient']['id']),
-                amount=ingredient['amount']
-            ))
-        IngredientInRecipe.objects.bulk_create(ingredient_list)
+        # # Устанавливаем связи с продуктами.
+        # ingredient_list = []
+        # for ingredient in ingredients:
+        #     # current_ingredient = get_object_or_404(
+        #     #     Ingredient,
+        #     #     id=ingredient['ingredient']['id']
+        #     # )
+        #     ingredient_list.append(IngredientInRecipe(  # .objects.create
+        #         recipe=recipe,
+        #         ingredient=Ingredient.objects.get(
+        #             id=ingredient['ingredient']['id']),
+        #         amount=ingredient['amount']
+        #     ))
+        # IngredientInRecipe.objects.bulk_create(ingredient_list)
         # Устанавливаем связи с тегами.
         recipe.tags.set(tags)
         return recipe
@@ -274,24 +294,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         new_ingredients = {}
         for ingr in ingredients:
             new_ingredients[ingr['ingredient']['id']] = ingr['amount']
+
         # Перезаписываем продукты, которые уже были в списке.
-        ingredients = instance.ingredients.all()
-        for ingredient in ingredients:
-            if ingredient.ingredient.id in new_ingredients:
-                ingredient.amount = new_ingredients.pop(
-                    ingredient.ingredient.id
-                )
-                ingredient.save()
-            else:
-                ingredient.delete()
-        # Сохраняем новые продукты.
-        if new_ingredients:
-            for ingredient in new_ingredients:
-                IngredientInRecipe.objects.create(
-                    recipe=instance,
-                    ingredient=get_object_or_404(Ingredient, id=ingredient),
-                    amount=new_ingredients[ingredient]
-                )
+        # ingredients = instance.ingredients.all()
+        instance.ingredients.all().delete()
+
+        # for ingredient in ingredients:
+        #     if ingredient.ingredient.id in new_ingredients:
+        #         ingredient.amount = new_ingredients.pop(
+        #             ingredient.ingredient.id
+        #         )
+        #         ingredient.save()
+        #     else:
+        #         ingredient.delete()
+
+        self.fill_ingredients(recipe=instance, ingredients=ingredients)
+        # # Сохраняем новые продукты.
+        # if new_ingredients:
+        #     for ingredient in new_ingredients:
+        #         IngredientInRecipe.objects.create(
+        #             recipe=instance,
+        #             ingredient=get_object_or_404(Ingredient, id=ingredient),
+        #             amount=new_ingredients[ingredient]
+        #         )
         return instance
 
 
@@ -310,17 +335,24 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
         # )
         fields = ExtendedUserSerializer.Meta.fields + (
             'recipes', 'recipes_count')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscribe.objects.all(),
+                fields=['user', 'subscribed']
+            )
+        ]
 
     def get_recipes(self, to_user):
         # Вывод рецептов для пользователя делаем через кастомный пагинатор
         # для ограничения количества рецептов в выдаче.
-        recipes = to_user.recipes.all()
-        paginator = RecipePagination()
-        result_page = paginator.paginate_queryset(
-            recipes, self.context['request']
-        )
+        recipes = to_user.recipes.all()[:1]
+        # paginator = RecipePagination()
+        # result_page = paginator.paginate_queryset(
+            # recipes, self.context['request']
+        # )
         serializer = ShortRecipeSerializer(
-            result_page,
+            # result_page,
+            recipes,
             many=True,
             context={'request': self.context['request']}
         )

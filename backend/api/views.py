@@ -1,4 +1,5 @@
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
@@ -9,7 +10,6 @@ from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.permissions import IsAuthorOrReadOnly
@@ -28,34 +28,37 @@ class ExtendedUserViewSet(UserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Подписка и отписка от пользователя."""
         user = self.request.user
-        to_user = get_object_or_404(User, id=kwargs.get('id'))
+        author = get_object_or_404(User, id=kwargs.get('id'))
 
         if request.method == 'POST':
             # Подписываемся на пользователя.
             # Проверка на самоподписку и повторную подписку.
             if (
-                to_user != user
-                and to_user not in user.is_subscribed.all()
+                author != user
+                and author not in user.is_subscribed.all()
             ):
-                user.is_subscribed.add(to_user)
-                if to_user in user.is_subscribed.all():
-                    serializer = SubscribeUserSerializer(
-                        to_user,
+                user.is_subscribed.add(author)
+                return Response(
+                    SubscribeUserSerializer(
+                        author,
                         context={'request': request}
-                    )
-                    return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED
-                    )
+                    ).data,
+                    status=status.HTTP_201_CREATED
+                )
+            # if author in user.is_subscribed.all():
+                # serializer = SubscribeUserSerializer(
+                #     author,
+                #     context={'request': request}
+                # )
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        elif request.method == 'DELETE':
-            # Отписываемся от пользователя.
-            if to_user in user.is_subscribed.all():
-                user.is_subscribed.remove(to_user)
-                if to_user not in user.is_subscribed.all():
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        # elif request.method == 'DELETE':
+        # Отписываемся от пользователя.
+        if author in user.is_subscribed.all():
+            user.is_subscribed.remove(author)
+            if author not in user.is_subscribed.all():
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
