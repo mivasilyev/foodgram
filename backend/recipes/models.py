@@ -24,14 +24,14 @@ class User(AbstractUser):
     )
     first_name = models.CharField(verbose_name='Имя', max_length=MAX_LENGTH)
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
-    is_subscribed = models.ManyToManyField(
-        # Поле для создания связи с таблицей подписки.
-        'self',
-        through='Subscribe',
-        verbose_name='Подписки',
-        symmetrical=False,
-        blank=True
-    )
+    # is_subscribed = models.ManyToManyField(
+    #     # Поле для создания связи с таблицей подписки.
+    #     'self',
+    #     through='Subscribe',
+    #     verbose_name='Подписки',
+    #     symmetrical=False,
+    #     blank=True
+    # )
     avatar = models.ImageField(
         verbose_name='Ссылка на аватар', upload_to='user_avatars', blank=True,
         default=DEFAULT_USER_AVATAR

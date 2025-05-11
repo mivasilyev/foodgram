@@ -61,7 +61,10 @@ class ExtendedUserSerializer(UserSerializer):
         if self.context:
             user = self.context.get('request').user
             if user.is_authenticated:
-                return to_user in user.is_subscribed.all()
+                # return to_user in user.is_subscribed.all()
+                return Subscribe.objects.filter(
+                    user=user, subscribed=to_user
+                ).exists()
         return False
 
 
@@ -232,7 +235,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'В рецепте нужны продукты.'
             )
         return data
-# ===========================================
 
     def fill_ingredients(self, recipe, ingredients):
         """Заполняем ингредиенты в рецепт."""
@@ -248,7 +250,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
             )
         IngredientInRecipe.objects.bulk_create(ingredient_list)
-# =========================================================
 
     def create(self, validated_data):
         # Создаем рецепт.
@@ -335,12 +336,6 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
         # )
         fields = ExtendedUserSerializer.Meta.fields + (
             'recipes', 'recipes_count')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscribe.objects.all(),
-                fields=['user', 'subscribed']
-            )
-        ]
 
     def get_recipes(self, to_user):
         # Вывод рецептов для пользователя делаем через кастомный пагинатор
@@ -367,3 +362,17 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
     #         if user.is_authenticated:
     #             return to_user in user.is_subscribed.all()
     #     return False
+
+
+class SubscribeSerializer(serializers.ModelSerializer):
+    """Сериализатор для записи подписки."""
+
+    class Meta:
+        model = Subscribe
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscribe.objects.all(),
+                fields=['user', 'subscribed']
+            )
+        ]

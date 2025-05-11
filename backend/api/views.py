@@ -15,10 +15,10 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (ExtendedUserSerializer, GetRecipeSerializer,
                              IngredientSerializer, RecipeSerializer,
-                             ShortRecipeSerializer, SubscribeUserSerializer,
-                             TagSerializer)
+                             ShortRecipeSerializer, SubscribeSerializer,
+                             SubscribeUserSerializer, TagSerializer)
 from constants import SHOPPING_CART_FILENAME
-from recipes.models import Ingredient, Recipe, Tag, User
+from recipes.models import Ingredient, Recipe, Subscribe, Tag, User
 
 
 class ExtendedUserViewSet(UserViewSet):
@@ -32,39 +32,57 @@ class ExtendedUserViewSet(UserViewSet):
 
         if request.method == 'POST':
             # Подписываемся на пользователя.
+            # serializer = SubscribeSerializer(user=user, subscribed=author)
+            # serializer.save()
             # Проверка на самоподписку и повторную подписку.
-            if (
-                author != user
-                and author not in user.is_subscribed.all()
-            ):
-                user.is_subscribed.add(author)
-                return Response(
-                    SubscribeUserSerializer(
-                        author,
-                        context={'request': request}
-                    ).data,
-                    status=status.HTTP_201_CREATED
-                )
+            if author == user:
+                # print('======================validationerror')
+                # raise ValidationError('Запрещена подписка на себя.')
+                # это здесь не работает.
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            subscription, created = Subscribe.objects.get_or_create(
+                user=user, subscribed=author
+            )
+            if not created:
+                # print('===================validationerror')
+                # raise ValidationError('Запрещена повторная подписка.')
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            # if (
+            #     author == user
+            #     and author not in user.is_subscribed.all()
+            # ):
+            #     user.is_subscribed.add(author)
+            return Response(
+                SubscribeUserSerializer(
+                    author,
+                    context={'request': request}
+                ).data,
+                status=status.HTTP_201_CREATED
+            )
             # if author in user.is_subscribed.all():
                 # serializer = SubscribeUserSerializer(
                 #     author,
                 #     context={'request': request}
                 # )
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # elif request.method == 'DELETE':
         # Отписываемся от пользователя.
-        if author in user.is_subscribed.all():
-            user.is_subscribed.remove(author)
-            if author not in user.is_subscribed.all():
-                return Response(status=status.HTTP_204_NO_CONTENT)
+        # get_object_or_404 не подходит, т.к. надо возвращать код 400.
+        if Subscribe.objects.filter(user=user, subscribed=author).exists():
+            Subscribe.objects.filter(user=user, subscribed=author).delete()
+        # if author in user.is_subscribed.all():
+        #     user.is_subscribed.remove(author)
+        #     if author not in user.is_subscribed.all():
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
         """Список юзеров, на которых подписан автор запроса, (с рецептами)."""
         user = self.request.user
-        queryset = user.is_subscribed.all()
+        # queryset = user.is_subscribed.all()
+        queryset = User.objects.filter(follows__user=user)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = SubscribeUserSerializer(
