@@ -159,13 +159,13 @@ class Recipe(models.Model):
         verbose_name='Время приготовления (в минутах)',
         validators=[MinValueValidator(MIN_COOKING_MINUTES)]
     )
-    is_favorited = models.ManyToManyField(
-        User,
-        through='Favorite',
-        related_name='is_favorited',
-        blank=True,
-        verbose_name='Находится ли в избранном'
-    )
+    # is_favorited = models.ManyToManyField(
+    #     User,
+    #     through='Favorite',
+    #     related_name='is_favorited',
+    #     blank=True,
+    #     verbose_name='Находится ли в избранном'
+    # )
     is_in_shopping_cart = models.ManyToManyField(
         User,
         through='ShoppingCart',
