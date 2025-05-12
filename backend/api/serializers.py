@@ -13,7 +13,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from constants import (FORBIDDEN_NAMES, MAX_LENGTH,  # MIN_INGREDIENT_AMOUNT,
                        USERNAME_PATTERN)
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            Subscribe, Tag)
+                            ShoppingCart, Subscribe, Tag)
 
 User = get_user_model()
 
@@ -140,12 +140,13 @@ class GetRecipeSerializer(serializers.ModelSerializer):
     def get_mark(self, recipe):
         user = self.context.get('request').user
         # Выборка рецептов пользователя зависит от вызвавшей функции.
-        recipe_qs = {
+        recipe_mark = {
             'get_is_favorited': Favorite.objects.filter(
                 user=user, recipe=recipe).exists(),  # user.is_favorited.all(),
-            'get_is_in_shopping_cart': user.is_in_shopping_cart.all(),
+            'get_is_in_shopping_cart': ShoppingCart.objects.filter(
+                user=user, recipe=recipe).exists()  # user.is_in_shopping_cart.all(),
         }
-        return recipe_qs[inspect.stack()[1][3]]
+        return recipe_mark[inspect.stack()[1][3]]
 
 
 # class GetRecipeSerializer(BaseRecipeSerializer):
@@ -165,7 +166,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = (
             'id', 'tags', 'author', 'ingredients', 'name', 'image', 'text',
-            'cooking_time', 'is_in_shopping_cart'  # 'is_favorited',
+            'cooking_time', # 'is_in_shopping_cart'  # 'is_favorited',
         )
         read_only_fields = ('author',)
 

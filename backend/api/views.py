@@ -20,7 +20,8 @@ from api.serializers import (ExtendedUserSerializer, GetRecipeSerializer,
                              ShortRecipeSerializer, SubscribeSerializer,
                              SubscribeUserSerializer, TagSerializer)
 from constants import SHOPPING_CART_FILENAME
-from recipes.models import Favorite, Ingredient, Recipe, Subscribe, Tag, User
+from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
+                            Subscribe, Tag, User)
 
 
 class ExtendedUserViewSet(UserViewSet):
@@ -169,7 +170,8 @@ class RecipeViewSet(ModelViewSet):
             in_shopping_cart = self.request.query_params.get(
                 'is_in_shopping_cart')
             if in_shopping_cart:
-                return user.is_in_shopping_cart.all()
+                return Recipe.objects.filter(shopping_ingredients__user=user)
+                # user.is_in_shopping_cart.all()
         return queryset
 
     def get_serializer_class(self, *args, **kwargs):
@@ -247,22 +249,33 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
 
         if request.method == 'POST':
-            if recipe not in user.is_in_shopping_cart.all():
-                recipe.is_in_shopping_cart.add(user)
-                if recipe in user.is_in_shopping_cart.all():
-                    serializer = ShortRecipeSerializer(recipe)
-                    return Response(
-                        data=serializer.data,
-                        status=status.HTTP_201_CREATED
-                    )
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # ========================================================
+            shopping_cart_pos, created = ShoppingCart.objects.get_or_create(
+                user=user, recipe=recipe
+            )
+            if not created:
+                return HttpResponseBadRequest('Продукт уже есть в корзине.')
 
-        elif request.method == 'DELETE':
-            if recipe in user.is_in_shopping_cart.all():
-                recipe.is_in_shopping_cart.remove(user)
-                if recipe not in user.is_in_shopping_cart.all():
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # if recipe not in user.is_in_shopping_cart.all():
+            #     recipe.is_in_shopping_cart.add(user)
+            #     if recipe in user.is_in_shopping_cart.all():
+            #         serializer = ShortRecipeSerializer(recipe)
+            return Response(
+                data=ShortRecipeSerializer(recipe).data,
+                status=status.HTTP_201_CREATED
+            )
+            # return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # elif request.method == 'DELETE':
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            ShoppingCart.objects.filter(user=user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return HttpResponseBadRequest('Продукта нет в корзине.')
+            # if recipe in user.is_in_shopping_cart.all():
+            #     recipe.is_in_shopping_cart.remove(user)
+            #     if recipe not in user.is_in_shopping_cart.all():
+            #         return Response(status=status.HTTP_204_NO_CONTENT)
+            # return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=["get"], detail=True, url_path="get-link",
             permission_classes=[AllowAny])
@@ -279,7 +292,8 @@ class RecipeViewSet(ModelViewSet):
     def download_shopping_cart(self, request):
         """Выгрузка корзины покупок файлом."""
         user = self.request.user
-        queryset = user.is_in_shopping_cart.all()
+        # queryset = user.is_in_shopping_cart.all()
+        queryset = Recipe.objects.filter(shopping_ingredients__user=user)
         shopping_dict = {}
         for recipe in queryset:
             recipe_serializer = GetRecipeSerializer(recipe)

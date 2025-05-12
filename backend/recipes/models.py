@@ -166,13 +166,13 @@ class Recipe(models.Model):
     #     blank=True,
     #     verbose_name='Находится ли в избранном'
     # )
-    is_in_shopping_cart = models.ManyToManyField(
-        User,
-        through='ShoppingCart',
-        related_name='is_in_shopping_cart',
-        blank=True,
-        verbose_name='Находится ли в корзине'
-    )
+    # is_in_shopping_cart = models.ManyToManyField(
+    #     User,
+    #     through='ShoppingCart',
+    #     related_name='is_in_shopping_cart',
+    #     blank=True,
+    #     verbose_name='Находится ли в корзине'
+    # )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
