@@ -15,6 +15,7 @@ class IsAuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
 class UsersMeUserPermission(CurrentUserOrAdminOrReadOnly):
     """Ограничение доступа незарегистрированным пользователям к users/me/."""
 
+    # pass
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS

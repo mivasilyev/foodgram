@@ -1,7 +1,9 @@
 from django.urls import path
 
-from api.views import short_link_redirect
+from recipes.views import short_link_redirect
+
+app_name = 'recipes'
 
 urlpatterns = [
-    path('<slug:short_link>', short_link_redirect),
+    path('<slug:short_link>', short_link_redirect, name='short_link'),
 ]

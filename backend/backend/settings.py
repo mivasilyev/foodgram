@@ -128,6 +128,7 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
         'user': ['api.permissions.UsersMeUserPermission'],
+        # 'user': ['api.permissions.IsAuthorOrReadOnly'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'HIDE_USERS': False,

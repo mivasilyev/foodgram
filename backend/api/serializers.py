@@ -139,14 +139,21 @@ class GetRecipeSerializer(serializers.ModelSerializer):
 
     def get_mark(self, recipe):
         user = self.context.get('request').user
-        # Выборка рецептов пользователя зависит от вызвавшей функции.
-        recipe_mark = {
-            'get_is_favorited': Favorite.objects.filter(
-                user=user, recipe=recipe).exists(),  # user.is_favorited.all(),
-            'get_is_in_shopping_cart': ShoppingCart.objects.filter(
-                user=user, recipe=recipe).exists()  # user.is_in_shopping_cart.all(),
+        # Рецепт ищем в модели в зависимости от вызвавшей функции.
+        calling_func = inspect.stack()[1][3]
+        model_choice = {
+            'get_is_favorited': Favorite,
+            'get_is_in_shopping_cart': ShoppingCart,
         }
-        return recipe_mark[inspect.stack()[1][3]]
+        model = model_choice[calling_func]
+        return model.objects.filter(user=user, recipe=recipe).exists()
+        # recipe_mark = {
+        #     'get_is_favorited': Favorite.objects.filter(
+        #         user=user, recipe=recipe).exists(),  # user.is_favorited.all(),
+        #     'get_is_in_shopping_cart': ShoppingCart.objects.filter(
+        #         user=user, recipe=recipe).exists()  # user.is_in_shopping_cart.all(),
+        # }
+        # return recipe_mark[inspect.stack()[1][3]]
 
 
 # class GetRecipeSerializer(BaseRecipeSerializer):
