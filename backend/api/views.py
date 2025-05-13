@@ -1,13 +1,12 @@
 import inspect
+# import os
 
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import ValidationError
-from django.http import (HttpResponse, HttpResponsePermanentRedirect,
-                         HttpResponseBadRequest)
+from django.db.models import F, Sum
+# from django.contrib.sites.shortcuts import get_current_site
+# from django.core.exceptions import ValidationError
+from django.http import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
-                                           FilterSet,
-                                           ModelMultipleChoiceFilter)
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action  # , api_view, permission_classes
@@ -21,9 +20,10 @@ from api.serializers import (ExtendedUserSerializer, GetRecipeSerializer,
                              IngredientSerializer, RecipeSerializer,
                              ShortRecipeSerializer, SubscribeSerializer,
                              SubscribeUserSerializer, TagSerializer)
-from constants import SHOPPING_CART_FILENAME
-from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
-                            Subscribe, Tag, User)
+from api.service import shopping_list_render
+from constants import DEFAULT_USER_AVATAR, SHOPPING_CART_FILENAME
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Subscribe, Tag, User)
 
 
 class ExtendedUserViewSet(UserViewSet):
@@ -44,7 +44,7 @@ class ExtendedUserViewSet(UserViewSet):
                 user=user, subscribed=author
             )
             if not created:
-                return HttpResponseBadRequest()
+                return HttpResponseBadRequest('Повторная подписка запрещена.')
             # if (
             #     author == user
             #     and author not in user.is_subscribed.all()
@@ -125,9 +125,8 @@ class ExtendedUserViewSet(UserViewSet):
                 user, data={'avatar': None}, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            # Файл с диска удаляет django-cleanup.
             return Response(status=status.HTTP_204_NO_CONTENT)
-            # return Response(
-            #     serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -159,22 +158,22 @@ class RecipeViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
-    def get_queryset(self):
-        # Добавляем фильтрацию по is_favorited, is_in_shopping_cart.
-        queryset = Recipe.objects.all()
-        user = self.request.user
-        if user.is_authenticated:
-            favorited = self.request.query_params.get('is_favorited')
-            if favorited:
-                return Recipe.objects.filter(favorites__user=user)
-                # user.is_favorited.all()
+    # def get_queryset(self):
+    #     # Добавляем фильтрацию по is_favorited, is_in_shopping_cart.
+    #     queryset = Recipe.objects.all()
+    #     user = self.request.user
+    #     if user.is_authenticated:
+    #         favorited = self.request.query_params.get('is_favorited')
+    #         if favorited:
+    #             return Recipe.objects.filter(favorites__user=user)
+    #             # user.is_favorited.all()
 
-            in_shopping_cart = self.request.query_params.get(
-                'is_in_shopping_cart')
-            if in_shopping_cart:
-                return Recipe.objects.filter(shopping_ingredients__user=user)
-                # user.is_in_shopping_cart.all()
-        return queryset
+    #         in_shopping_cart = self.request.query_params.get(
+    #             'is_in_shopping_cart')
+    #         if in_shopping_cart:
+    #             return Recipe.objects.filter(shopping_ingredients__user=user)
+    #             # user.is_in_shopping_cart.all()
+    #     return queryset
 
     def get_serializer_class(self, *args, **kwargs):
         # Для показа рецептов используем отдельный сериализатор.
@@ -214,7 +213,6 @@ class RecipeViewSet(ModelViewSet):
             GetRecipeSerializer(instance).data,
             status=status.HTTP_200_OK
         )
-    # ========================================================================
 
     def add_recipe_mark(self, recipe_id):
         """Добавляем к рецепту отметку избранное/корзина."""
@@ -342,26 +340,15 @@ class RecipeViewSet(ModelViewSet):
     def download_shopping_cart(self, request):
         """Выгрузка корзины покупок файлом."""
         user = self.request.user
-        # queryset = user.is_in_shopping_cart.all()
-        queryset = Recipe.objects.filter(shopping_ingredients__user=user)
-        shopping_dict = {}
-        for recipe in queryset:
-            recipe_serializer = GetRecipeSerializer(recipe)
-            for ingred in recipe_serializer.data['ingredients']:
-                key = f"{ingred['name']} ({ingred['measurement_unit']})"
-                value = ingred['amount']
-                if key in shopping_dict:
-                    shopping_dict[key] += value
-                else:
-                    shopping_dict[key] = value
-        response = HttpResponse(content_type='text/plain')
-        response.write('<p>Список покупок:</p><p></p>')
-        for position in shopping_dict:
-            response.write(f'<p>{position} - {shopping_dict[position]}</p>')
-        response['Content-Disposition'] = 'attachment; filename={0}'.format(
-            SHOPPING_CART_FILENAME
+        recipe_qs = Recipe.objects.filter(shopping_ingredients__user=user)
+        product_qs = IngredientInRecipe.objects.filter(
+            recipe__shopping_ingredients__user=user
+        ).values(product=F('ingredient__name'),
+                 unit=F('ingredient__measurement_unit')).annotate(
+                     amount=Sum('amount'))
+        return shopping_list_render(
+            recipe_qs=recipe_qs, products_qs=product_qs
         )
-        return response
 
 
 # @api_view(['GET'])

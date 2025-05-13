@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'django_filters',
+    'django_cleanup.apps.CleanupConfig',
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig',
 ]
@@ -133,7 +134,8 @@ DJOSER = {
     },
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'api.serializers.AddValidationUserCreateSerializer',
+        # 'user_create': 'api.serializers.AddValidationUserCreateSerializer',
+        'user_create': 'djoser.serializers.UserCreateSerializer',
         'user': 'api.serializers.ExtendedUserSerializer',
         'current_user': 'api.serializers.ExtendedUserSerializer',
     },
