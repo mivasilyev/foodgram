@@ -1,49 +1,13 @@
-# import inspect
-# import re
-
 from django.contrib.auth import get_user_model
-# from django.core.exceptions import ValidationError
-# from django.shortcuts import get_object_or_404
-from djoser.serializers import UserSerializer  # UserCreateSerializer
+from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-# from api.pagination import RecipePagination
-# from constants import FORBIDDEN_NAMES, MAX_LENGTH, USERNAME_PATTERN
-from recipes.models import (Ingredient, IngredientInRecipe, Recipe,
-                            Subscribe, Tag)
+from recipes.models import (Ingredient, IngredientInRecipe, Recipe, Subscribe,
+                            Tag)
 
 User = get_user_model()
-
-
-# class AddValidationUserCreateSerializer(UserCreateSerializer):
-#     """Доработанный сериализатор djoser для создания новых пользователей."""
-#     # Исходный сериализатор не подходит, т.к. не обеспечивает требуемую
-#     # валидацию на запрещенные имена.
-
-#     class Meta:
-#         model = User
-#         fields = (
-#             'email', 'id', 'username', 'first_name', 'last_name', 'password'
-#         )
-
-#     def validate_username(self, value):
-#         if value in FORBIDDEN_NAMES:
-#             raise ValidationError(
-#                 f'Имя пользователя {value} не разрешено.'
-#             )
-#         if not re.fullmatch(USERNAME_PATTERN, value):
-#             raise ValidationError(
-#                 'Имя пользователя может содержать буквы, цифры и знаки '
-#                 '@/./+/-/_.'
-#             )
-#         if len(value) > MAX_LENGTH:
-#             raise ValidationError(
-#                 'В имени пользователя должно быть не более '
-#                 f'{MAX_LENGTH} символов.'
-#             )
-#         return value
 
 
 class ExtendedUserSerializer(UserSerializer):
@@ -275,15 +239,8 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
             'recipes', 'recipes_count')
 
     def get_recipes(self, author):
-        # Вывод рецептов для пользователя делаем через кастомный пагинатор
-        # для ограничения количества рецептов в выдаче.
-        # paginator = RecipePagination()
-        # result_page = paginator.paginate_queryset(
-        #     recipes, self.context['request']
-        # )
         recipes = author.recipes.all()[:1]
         serializer = ShortRecipeSerializer(
-            # result_page,
             recipes,
             many=True,
             context={'request': self.context['request']}

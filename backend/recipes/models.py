@@ -24,14 +24,6 @@ class User(AbstractUser):
     )
     first_name = models.CharField(verbose_name='Имя', max_length=MAX_LENGTH)
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
-    # is_subscribed = models.ManyToManyField(
-    #     # Поле для создания связи с таблицей подписки.
-    #     'self',
-    #     through='Subscribe',
-    #     verbose_name='Подписки',
-    #     symmetrical=False,
-    #     blank=True
-    # )
     avatar = models.ImageField(
         verbose_name='Ссылка на аватар', upload_to='user_avatars', blank=True,
         default=DEFAULT_USER_AVATAR
@@ -134,9 +126,6 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
-        # return self.name if len(self.name) <= SIMBOLS_LIMIT else (
-        #     f'{self.name[:SIMBOLS_TRUNCATE]}...'
-        # )
 
 
 class Recipe(models.Model):
@@ -159,20 +148,6 @@ class Recipe(models.Model):
         verbose_name='Время приготовления (в минутах)',
         validators=[MinValueValidator(MIN_COOKING_MINUTES)]
     )
-    # is_favorited = models.ManyToManyField(
-    #     User,
-    #     through='Favorite',
-    #     related_name='is_favorited',
-    #     blank=True,
-    #     verbose_name='Находится ли в избранном'
-    # )
-    # is_in_shopping_cart = models.ManyToManyField(
-    #     User,
-    #     through='ShoppingCart',
-    #     related_name='is_in_shopping_cart',
-    #     blank=True,
-    #     verbose_name='Находится ли в корзине'
-    # )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )

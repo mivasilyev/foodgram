@@ -3,8 +3,9 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, User,
-                            Recipe, ShoppingCart, Subscribe, Tag)
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Subscribe, Tag, User)
+
 from constants import ADMIN_PIC_DOTS
 
 admin.site.unregister(Group)
@@ -194,10 +195,3 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
 
-
-# @admin.register(ShoppingCart)
-# class ShoppingCartAdmin(admin.ModelAdmin):
-#     """Админка для корзины покупок."""
-
-#     list_display = ('user', 'recipe')
-#     search_fields = ('user__username', 'recipe__name')

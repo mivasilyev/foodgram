@@ -8,12 +8,6 @@ LONG_MAX_LENGTH = 254
 # Размеры картинки для админки.
 ADMIN_PIC_DOTS = 50
 
-# # Транкатор слов.
-# WORDS_TRUNCATE = 4
-# SIMBOLS_LIMIT = 15
-# SIMBOLS_TRUNCATE = 12
-# # CONTINUATION = '...'
-
 # Список запрещенных имен пользователя.
 FORBIDDEN_NAMES = ['me', ]
 # Допустимые паттерны.

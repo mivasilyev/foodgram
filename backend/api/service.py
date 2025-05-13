@@ -38,22 +38,3 @@ def shopping_list_render(recipe_qs, products_qs):
         as_attachment=True,
         filename=SHOPPING_CART_FILENAME
     )
-
-    # # Reset the buffer's position to the beginning
-    # buffer.seek(0)
-
-    # # Read data from the buffer
-    # print(buffer.read())
-
-    # Предыдущий рабочий код.
-    # response = HttpResponse(content_type='text/plain')
-    # response.write('<p>Список покупок:</p><p></p>')
-    # for position in products_qs:
-    #     response.write(
-    #         f'<p>{position["Продукт"]}, {position["мера"]} - '
-    #         f'{position["Количество"]}</p>'
-    #     )
-    # response['Content-Disposition'] = 'attachment; filename={0}'.format(
-    #     SHOPPING_CART_FILENAME
-    # )
-    # return response
