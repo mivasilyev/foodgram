@@ -34,6 +34,7 @@ def shopping_list_render(recipe_qs, products_qs):
     # Отправляем файл пользователю.
     return FileResponse(
         content,
+        content_type='text/plain',
         as_attachment=True,
         filename=SHOPPING_CART_FILENAME
     )
