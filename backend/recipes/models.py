@@ -2,10 +2,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from constants import (DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH,
-                       MID_MAX_LENGTH, MIN_COOKING_MINUTES,
-                       MIN_INGREDIENT_AMOUNT, SHORT_MAX_LENGTH, TAG_MAX_LENGTH,
-                       TAG_PATTERN, USERNAME_PATTERN)
+from constants import (
+    DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH, MID_MAX_LENGTH,
+    MIN_COOKING_MINUTES, MIN_INGREDIENT_AMOUNT, SHORT_MAX_LENGTH,
+    TAG_MAX_LENGTH, USERNAME_PATTERN  # TAG_PATTERN
+)
+from backend.settings import AVATARS_URL
 
 
 class User(AbstractUser):
@@ -25,7 +27,10 @@ class User(AbstractUser):
     first_name = models.CharField(verbose_name='Имя', max_length=MAX_LENGTH)
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
     avatar = models.ImageField(
-        verbose_name='Ссылка на аватар', upload_to='user_avatars', blank=True,
+        verbose_name='Ссылка на аватар',
+        # upload_to='user_avatars',
+        upload_to=AVATARS_URL,
+        blank=True,
         default=DEFAULT_USER_AVATAR
     )
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', ]
@@ -88,7 +93,7 @@ class Tag(models.Model):
         verbose_name='Уникальный слаг',
         max_length=TAG_MAX_LENGTH,
         unique=True,
-        validators=(RegexValidator(regex=TAG_PATTERN), )
+        # validators=(RegexValidator(regex=TAG_PATTERN), )
     )
 
     class Meta:

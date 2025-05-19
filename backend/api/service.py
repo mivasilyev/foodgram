@@ -1,40 +1,60 @@
-import io
 from datetime import datetime
-
-from django.http import FileResponse
-
-from constants import SHOPPING_CART_FILENAME
 
 
 def shopping_list_render(recipe_qs, products_qs):
-    """Получает сеты рецептов и продуктов и возвращает текстовый файл."""
+    """Получает сеты рецептов и продуктов и возвращает список покупок."""
 
-    # Инициализируем буфер StringIO.
-    buffer = io.StringIO()
+    products = [
+        (f'{number}. {position["product"].capitalize()} ({position["unit"]}) '
+         f'- {position["amount"]}') for number, position in enumerate(
+             products_qs, start=1)
+    ]
+    recipes = [
+        (f'{recipe.name} от автора {recipe.author.username}'
+         ) for recipe in recipe_qs
+    ]
 
-    # Сохраняем данные списка покупок в буфер.
-    buffer.write('СПИСОК ПОКУПОК\n')
-    buffer.write(f'(составлен {datetime.now().date()})\n\n')
-    pos_no = 1
-    for position in products_qs:
-        buffer.write(f'{pos_no}. {position["product"].capitalize()}, '
-                     f'{position["unit"]} - {position["amount"]}\n')
+    return '\n'.join([
+        'СПИСОК ПОКУПОК',
+        f'(составлен {datetime.now().date()})',
+        '\n',
+        'ПРОДУКТЫ:',
+        *products,
+        '\n',
+        'ДЛЯ РЕЦЕПТОВ:',
+        *recipes,
+    ])
 
-        pos_no += 1
+# from django.http import FileResponse
+# from constants import SHOPPING_CART_FILENAME
 
-    # Сохраняем данные рецептов в буфер.
-    buffer.write('\nРЕЦЕПТЫ\n')
-    for recipe in recipe_qs:
-        buffer.write(f'{recipe.name} от автора {recipe.author.username}\n')
+# def shopping_list_render(recipe_qs, products_qs):
+#     """Получает сеты рецептов и продуктов и возвращает текстовый файл."""
 
-    # Получаем буфер в переменную и закрываем.
-    content = buffer.getvalue()
-    buffer.close()
+#     # Инициализируем буфер StringIO.
+#     buffer = io.StringIO()
 
-    # Отправляем файл пользователю.
-    return FileResponse(
-        content,
-        content_type='text/plain',
-        as_attachment=True,
-        filename=SHOPPING_CART_FILENAME
-    )
+#     # Сохраняем данные списка покупок в буфер.
+#     buffer.write('СПИСОК ПОКУПОК\n')
+#     buffer.write(f'(составлен {datetime.now().date()})\n\n')
+#     pos_no = 1
+#     for position in products_qs:
+#         buffer.write(f'{pos_no}. {position["product"].capitalize()}, '
+#                      f'{position["unit"]} - {position["amount"]}\n')
+#         pos_no += 1
+#     # Сохраняем данные рецептов в буфер.
+#     buffer.write('\nРЕЦЕПТЫ\n')
+#     for recipe in recipe_qs:
+#         buffer.write(f'{recipe.name} от автора {recipe.author.username}\n')
+
+#     # Получаем буфер в переменную и закрываем.
+#     content = buffer.getvalue()
+#     buffer.close()
+
+#     # Отправляем файл пользователю.
+#     return FileResponse(
+#         content,
+#         content_type='text/plain',
+#         as_attachment=True,
+#         filename=SHOPPING_CART_FILENAME
+#     )

@@ -32,15 +32,15 @@ class RecipeFilter(FilterSet):
         method='filter_is_in_shopping_cart'
     )
 
-    def filter_is_favorited(self, queryset, name, value):
+    def filter_is_favorited(self, recipes, name, value):
         if value:
-            return queryset.filter(favorites__user__isnull=False)
-        return queryset
+            return recipes.filter(favorites__user__isnull=False)
+        return recipes
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
+    def filter_is_in_shopping_cart(self, recipes, name, value):
         if value:
-            return queryset.filter(shopping_ingredients__user__isnull=False)
-        return queryset
+            return recipes.filter(shopping_ingredients__user__isnull=False)
+        return recipes
 
     class Meta:
         model = Recipe

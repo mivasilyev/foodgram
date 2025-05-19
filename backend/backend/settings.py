@@ -18,6 +18,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'backend_static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+AVATARS_URL = 'user_avatars'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -67,15 +69,8 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 AUTH_USER_MODEL = 'recipes.User'
 
 # Настройки подключаемой базы определяются в .env (PostgreSQL или sqlite)
-# По дефолту база sqlite.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-# Если есть настройка в .env, то переключаем на PostgreSQL.
-if os.getenv('DB_TYPE_POSTGRES') is True:
+# По дефолту база PostgreSQL.
+if os.getenv('DB_SQLITE', 'False') != 'True':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -83,7 +78,15 @@ if os.getenv('DB_TYPE_POSTGRES') is True:
             'USER': os.getenv('POSTGRES_USER', 'foodgram_user'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'db'),
-            'PORT': os.getenv('DB_PORT', 5432)
+            'PORT': os.getenv('DB_PORT', 5432),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            # 'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 

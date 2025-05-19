@@ -1,7 +1,5 @@
-import inspect
-
 from django.db.models import F, Sum
-from django.http import HttpResponseBadRequest
+from django.http import FileResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -13,13 +11,17 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
-from api.serializers import (ExtendedUserSerializer, GetRecipeSerializer,
-                             IngredientSerializer, RecipeSerializer,
-                             ShortRecipeSerializer, SubscribeUserSerializer,
-                             TagSerializer)
+from api.serializers import (
+    ExtendedUserSerializer, GetRecipeSerializer, IngredientSerializer,
+    RecipeSerializer, ShortRecipeSerializer, SubscribeUserSerializer,
+    TagSerializer  #  SubscribeSerializer,
+)
 from api.service import shopping_list_render
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Subscribe, Tag, User)
+from constants import SHOPPING_CART_FILENAME
+from recipes.models import (
+    Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Subscribe,
+    Tag, User
+)
 
 
 class ExtendedUserViewSet(UserViewSet):
@@ -29,11 +31,23 @@ class ExtendedUserViewSet(UserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Подписка и отписка от пользователя."""
         user = self.request.user
-        author = get_object_or_404(User, id=kwargs.get('id'))
+        author = get_object_or_404(User, id=kwargs['id'])
 
         if request.method == 'POST':
             # Подписываемся на пользователя.
             # Проверка на самоподписку и повторную подписку.
+
+            # print('==========', user, author)
+            # print(SubscribeUserSerializer.Meta.fields)
+            # serializer = SubscribeUserSerializer(
+            #     data={'username': author.username, 'subscribed': author.id},
+            #     context=self.get_serializer_context(),
+            # )
+            # print(serializer.is_valid(), serializer.errors)
+            # serializer.is_valid(raise_exception=True)
+            # serializer.save()
+            # return Response(serializer.data, status=status.HTTP_201_CREATED)
+
             if author == user:
                 return HttpResponseBadRequest('Запрещена подписка на себя.')
             subscription, created = Subscribe.objects.get_or_create(
@@ -48,6 +62,7 @@ class ExtendedUserViewSet(UserViewSet):
                 ).data,
                 status=status.HTTP_201_CREATED
             )
+
         # Отписываемся от пользователя.
         # get_object_or_404 не подходит, т.к. надо возвращать код 400.
         if Subscribe.objects.filter(user=user, subscribed=author).exists():
@@ -82,15 +97,15 @@ class ExtendedUserViewSet(UserViewSet):
                 return Response(response, status=status.HTTP_200_OK)
             return HttpResponseBadRequest('Нет аватара.')
 
-        elif request.method == 'DELETE':
-            # Удаление аватара пользователя.
-            user = self.request.user
-            serializer = ExtendedUserSerializer(
-                user, data={'avatar': None}, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            # Файл с диска удаляет django-cleanup.
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        # elif request.method == 'DELETE':
+        # Удаление аватара пользователя.
+        user = self.request.user
+        serializer = ExtendedUserSerializer(
+            user, data={'avatar': None}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        # Файл с диска удаляет django-cleanup.
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -159,17 +174,20 @@ class RecipeViewSet(ModelViewSet):
             status=status.HTTP_200_OK
         )
 
-    def add_recipe_mark(self, recipe_id):
+    def add_recipe_mark(self, recipe_id, model):
         """Добавляем к рецепту отметку избранное/корзина."""
         user = self.request.user
         recipe = get_object_or_404(Recipe, id=recipe_id)
         # Рабочую модель определяем по вызывающей функции, а ее по стеку.
-        calling_func = inspect.stack()[1][3]
-        model_choice = {
-            'favorite': Favorite,
-            'shopping_cart': ShoppingCart,
-        }
-        mark, created = model_choice[calling_func].objects.get_or_create(
+        # calling_func = inspect.stack()[1][3]
+        # model_choice = {
+        #     'favorite': Favorite,
+        #     'shopping_cart': ShoppingCart,
+        # }
+        # mark, created = model_choice[calling_func].objects.get_or_create(
+        #     user=user, recipe=recipe
+        # )
+        mark, created = model.objects.get_or_create(
             user=user, recipe=recipe
         )
         if not created:
@@ -179,49 +197,57 @@ class RecipeViewSet(ModelViewSet):
             status=status.HTTP_201_CREATED
         )
 
-    def delete_recipe_mark(self, recipe_id):
+    def delete_recipe_mark(self, recipe_id, model):
         user = self.request.user
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        calling_func = inspect.stack()[1][3]
-        model_choice = {
-            'delete': Favorite,
-            'shopping_cart': ShoppingCart,
-        }
-        model = model_choice[calling_func]
-        if model.objects.filter(user=user, recipe=recipe).exists():
-            model.objects.filter(user=user, recipe=recipe).delete()
+        # Запрос нужен, чтобы получить 404, если нет такого рецепта в Recipe.
+        # без него проваливаются тесты на попытку удалить несуществующий
+        # рецепт из корзины/избранного.
+        get_object_or_404(Recipe, id=recipe_id)
+        # calling_func = inspect.stack()[1][3]
+        # model_choice = {
+        #     'delete': Favorite,
+        #     'shopping_cart': ShoppingCart,
+        # }
+        # model = model_choice[calling_func]
+        if model.objects.filter(user=user, recipe_id=recipe_id).exists():
+            model.objects.filter(user=user, recipe_id=recipe_id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return HttpResponseBadRequest('Рецепта нет в модели.')
+        return HttpResponseBadRequest('Нет такой отметки на рецепте.')
 
     @action(methods=["post"], detail=True)
     def favorite(self, request, pk):
         """Добавляем рецепт в избранное."""
 
-        return self.add_recipe_mark(recipe_id=pk)
+        return self.add_recipe_mark(recipe_id=pk, model=Favorite)
 
     @action(methods=["delete"], detail=True)
     def delete(self, request, pk):
         """Удаляем рецепт из избранного."""
 
-        return self.delete_recipe_mark(recipe_id=pk)
+        return self.delete_recipe_mark(recipe_id=pk, model=Favorite)
 
     @action(methods=["post", "delete"], detail=True)
     def shopping_cart(self, request, pk):
         """Работа с корзиной покупок."""
 
         if request.method == 'POST':
-            return self.add_recipe_mark(recipe_id=pk)
+            return self.add_recipe_mark(recipe_id=pk, model=ShoppingCart)
 
-        return self.delete_recipe_mark(recipe_id=pk)
+        return self.delete_recipe_mark(recipe_id=pk, model=ShoppingCart)
 
     @action(methods=["get"], detail=True, url_path="get-link",
             permission_classes=[AllowAny])
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
-        recipe = get_object_or_404(Recipe, id=pk)
-        domain = request.META.get('HTTP_HOST')
-        response = {'short-link': f'{domain}/s/{hex(recipe.id)}'}
-        return Response(response, status=status.HTTP_200_OK)
+        print(pk, type(pk))
+        if Recipe.objects.filter(id=pk).exists():
+            # recipe = get_object_or_404(Recipe, id=pk)
+            domain = request.META.get('HTTP_HOST')
+            response = {'short-link': f'{domain}/s/{hex(int(pk))}'}
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            # если объекта нет ===============================================
+            pass
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):
@@ -232,7 +258,10 @@ class RecipeViewSet(ModelViewSet):
             recipe__shopping_ingredients__user=user
         ).values(product=F('ingredient__name'),
                  unit=F('ingredient__measurement_unit')).annotate(
-                     amount=Sum('amount'))
-        return shopping_list_render(
-            recipe_qs=recipe_qs, products_qs=product_qs
+                     amount=Sum('amount')).order_by('ingredient__name')
+        return FileResponse(
+            shopping_list_render(recipe_qs=recipe_qs, products_qs=product_qs),
+            content_type='text/plain',
+            as_attachment=True,
+            filename=SHOPPING_CART_FILENAME
         )
