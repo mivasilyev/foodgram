@@ -19,7 +19,7 @@ class User(AbstractUser):
         unique=True
     )
     username = models.CharField(
-        verbose_name='Уникальный юзернейм',
+        verbose_name='Юзернейм',
         max_length=MAX_LENGTH,
         unique=True,
         validators=(RegexValidator(regex=USERNAME_PATTERN), )
@@ -57,7 +57,7 @@ class Subscribe(models.Model):
     subscribed = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='followers',
+        related_name='authors',
         verbose_name='Подписан на'
     )
 
@@ -85,12 +85,12 @@ class Tag(models.Model):
     """Модель тега."""
 
     name = models.CharField(
-        verbose_name='Уникальное название',
+        verbose_name='Название',
         max_length=TAG_MAX_LENGTH,
         unique=True
     )
     slug = models.SlugField(
-        verbose_name='Уникальный слаг',
+        verbose_name='Слаг',
         max_length=TAG_MAX_LENGTH,
         unique=True,
         # validators=(RegexValidator(regex=TAG_PATTERN), )
@@ -113,13 +113,15 @@ class Ingredient(models.Model):
         max_length=MID_MAX_LENGTH, verbose_name='Название', unique=True
     )
     measurement_unit = models.CharField(
-        max_length=SHORT_MAX_LENGTH, verbose_name='Мера', blank=True
+        max_length=SHORT_MAX_LENGTH,
+        verbose_name='Единица измерения',
+        blank=True
     )
 
     class Meta:
-        default_related_name = 'ingredient'
+        # default_related_name = 'ingredient'
         verbose_name = 'продукт'
-        verbose_name_plural = 'Список продуктов'
+        verbose_name_plural = 'Продукты'
         ordering = ('name', )
         constraints = [
             # Ингредиент записан один раз.
@@ -184,7 +186,7 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'продукты в рецепте'
         verbose_name_plural = 'Продукты в рецепте'
-        default_related_name = 'ingredients'
+        default_related_name = 'ingredients_in_recipe'
         ordering = ('ingredient__name', )
         constraints = [
             # Продукт входит в рецепт один раз.
@@ -199,7 +201,7 @@ class IngredientInRecipe(models.Model):
                 f'{self.ingredient.measurement_unit}')
 
 
-class BaseCart(models.Model):
+class BaseMark(models.Model):
     """Базовый класс для избранного и корзины."""
 
     user = models.ForeignKey(
@@ -215,11 +217,12 @@ class BaseCart(models.Model):
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)ss'
         constraints = [
             # Запрещено повторное добавление.
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_in_cart'
+                name='unique_in_%(class)s'
             )
         ]
 
@@ -227,19 +230,19 @@ class BaseCart(models.Model):
         return f'{self.user.username} - {self.recipe.name}'
 
 
-class Favorite(BaseCart):
+class Favorite(BaseMark):
     """Добавление рецептов в избранное."""
 
-    class Meta:
+    class Meta(BaseMark.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
-        default_related_name = 'favorites'
+        # default_related_name = 'favorites'
 
 
-class ShoppingCart(BaseCart):
+class ShoppingCart(BaseMark):
     """Добавление рецептов в список покупок."""
 
-    class Meta:
+    class Meta(BaseMark.Meta):
         verbose_name = 'корзина'
         verbose_name_plural = 'Корзины'
-        default_related_name = 'shopping_ingredients'
+        # default_related_name = 'shopping_ingredients'

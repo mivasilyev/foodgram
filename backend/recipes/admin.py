@@ -3,46 +3,80 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Subscribe, Tag, User)
-
 from constants import ADMIN_PIC_DOTS
+from recipes.models import (
+    Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Subscribe,
+    Tag, User
+)
 
 admin.site.unregister(Group)
 
 
-class RecipeFilter(admin.SimpleListFilter):
-    title = 'Наличие рецептов'
+class BaseFilter(admin.SimpleListFilter):
+    """Базовый класс для фильтра рецептов и подписок."""
+
     parameter_name = 'recipes'
+    filter_kwargs = {f"{parameter_name}__exact": None}
+    choice = (
+        ('no', 'Нет'),
+        ('yes', 'Есть'),
+    )
 
     def lookups(self, request, model_admin):
-        return (
-            ('no', 'Нет рецептов'),
-            ('yes', 'Есть рецепты'),
-        )
+        return self.choice
 
     def queryset(self, request, queryset):
         if self.value() == 'no':
-            return queryset.filter(recipes__exact=None)
+            return queryset.filter(**self.filter_kwargs)
+
+            # return queryset.filter(recipes__exact=None)
+            # return queryset.filter('%(filter_field)s' is None)
         if self.value() == 'yes':
-            return queryset.exclude(recipes__exact=None)
+            # return queryset.exclude(recipes__exact=None)
+            return queryset.exclude(**self.filter_kwargs)
 
 
-class FollowsFilter(admin.SimpleListFilter):
+class RecipeFilter(BaseFilter):
+
+    title = 'Наличие рецептов'
+    choice = (
+        ('no', 'Нет рецептов'),
+        ('yes', 'Есть рецепты'),
+    )
+
+    # def lookups(self, request, model_admin):
+    #     return self.choice
+
+    # def queryset(self, request, queryset):
+    #     if self.value() == 'no':
+    #         return queryset.filter(recipes__exact=None)
+    #     if self.value() == 'yes':
+    #         return queryset.exclude(recipes__exact=None)
+
+
+# class FollowsFilter(admin.SimpleListFilter):
+
+class FollowsFilter(BaseFilter):
+
     title = 'Пользователь подписан'
     parameter_name = 'is_subscribed'
+    choice = (
+        ('no', 'Нет подписок'),
+        ('yes', 'Есть подписки'),
+    )
 
-    def lookups(self, request, model_admin):
-        return (
-            ('no', 'Нет подписок'),
-            ('yes', 'Есть подписки'),
-        )
+    # def lookups(self, request, model_admin):
+    #     return self.choice
+    #     # return (
+    #     #     ('no', 'Нет подписок'),
+    #     #     ('yes', 'Есть подписки'),
+    #     # )
 
-    def queryset(self, request, queryset):
-        if self.value() == 'no':
-            return queryset.filter(is_subscribed__exact=None)
-        if self.value() == 'yes':
-            return queryset.exclude(is_subscribed__exact=None)
+    # def queryset(self, request, queryset):
+    #     if self.value() == 'no':
+    #         return queryset.filter(is_subscribed__exact=None)
+    #     if self.value() == 'yes':
+    #         return queryset.exclude(is_subscribed__exact=None)
 
 
 class RecipesCountMixin:
@@ -60,7 +94,7 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
 
     list_display = (
         'avatar_preview', 'id', 'username', 'name', 'email', 'is_staff',
-        'recipes_count', 'subscribed_count', 'followers_count'
+        'recipes_count', 'subscribed_count', 'authors_count'
     )
     list_display_links = ('username', )
     readonly_fields = ['avatar_preview']
@@ -78,8 +112,8 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
         return user.follows.all().count()
 
     @admin.display(description='Подписчиков')
-    def followers_count(self, user):
-        return user.followers.all().count()
+    def authors_count(self, user):
+        return user.authors.all().count()
 
     @mark_safe
     @admin.display(description='Аватар')
@@ -140,7 +174,7 @@ class IngredientAdmin(admin.ModelAdmin):
     @admin.display(description='Рецептов с ингредиентом')
     # Код подсчета рецептов не совпадает с аналогичным для тегов.
     def recipes_count(self, recipe):
-        return recipe.ingredients.all().count()
+        return recipe.ingredients_in_recipe.all().count()
 
 
 @admin.register(Recipe)
@@ -175,7 +209,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Продукты')
     def view_ingredients(self, recipe):
-        ingredients_qs = recipe.ingredients.all()
+        ingredients_qs = recipe.ingredients_in_recipe.all()
         ingredients = [ingr.ingredient.name for ingr in ingredients_qs]
         return ', '.join(ingredients)
 

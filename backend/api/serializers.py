@@ -137,7 +137,9 @@ class GetRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для полного отображения рецептов."""
 
     tags = TagSerializer(many=True)
-    ingredients = IngredientInRecipeSerializer(many=True)
+    ingredients = IngredientInRecipeSerializer(
+        many=True, source='ingredients_in_recipe'
+    )
     # image = Base64ImageField()
     author = ExtendedUserSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField()
@@ -164,7 +166,8 @@ class GetRecipeSerializer(serializers.ModelSerializer):
         return (
             bool(request)
             and request.user.is_authenticated
-            and recipe.shopping_ingredients.filter(user=request.user).exists()
+            # and recipe.shopping_ingredients.filter(user=request.user).exists()
+            and recipe.shoppingcarts.filter(user=request.user).exists()
         )
 
 
@@ -300,7 +303,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         # super().update(instance=instance, validated_data=validated_data)
         # Устанавливаем новые теги и перезаписываем продукты.
         instance.tags.set(tags)
-        instance.ingredients.all().delete()
+        instance.ingredients_in_recipe.all().delete()
         self.fill_ingredients(recipe=instance, ingredients=ingredients)
         # return instance  # объединить
         return super().update(

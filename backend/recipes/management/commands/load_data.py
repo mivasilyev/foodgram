@@ -23,7 +23,6 @@ class Command(BaseCommand):
             with open(file_path, 'r', encoding='utf-8') as csvfile:
                 csvreader = csv.reader(csvfile)
                 for row in csvreader:
-                    print(row)
                     if file_name == INGREDIENTS:
                         name, measurement_unit = row
                         Ingredient.objects.update_or_create(

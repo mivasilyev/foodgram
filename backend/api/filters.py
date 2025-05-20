@@ -28,7 +28,8 @@ class RecipeFilter(FilterSet):
         method='filter_is_favorited'
     )
     is_in_shopping_cart = BooleanFilter(
-        field_name='shopping_ingredients__user',
+        # field_name='shopping_ingredients__user',
+        field_name='shoppingcarts__user',
         method='filter_is_in_shopping_cart'
     )
 
@@ -39,7 +40,8 @@ class RecipeFilter(FilterSet):
 
     def filter_is_in_shopping_cart(self, recipes, name, value):
         if value:
-            return recipes.filter(shopping_ingredients__user__isnull=False)
+            # return recipes.filter(shopping_ingredients__user__isnull=False)
+            return recipes.filter(shoppingcarts__user__isnull=False)
         return recipes
 
     class Meta:

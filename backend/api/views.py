@@ -239,7 +239,7 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=[AllowAny])
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
-        print(pk, type(pk))
+        # print(pk, type(pk))
         if Recipe.objects.filter(id=pk).exists():
             # recipe = get_object_or_404(Recipe, id=pk)
             domain = request.META.get('HTTP_HOST')
@@ -253,9 +253,11 @@ class RecipeViewSet(ModelViewSet):
     def download_shopping_cart(self, request):
         """Выгрузка корзины покупок файлом."""
         user = self.request.user
-        recipe_qs = Recipe.objects.filter(shopping_ingredients__user=user)
+        # recipe_qs = Recipe.objects.filter(shopping_ingredients__user=user)
+        recipe_qs = Recipe.objects.filter(shoppingcarts__user=user)
         product_qs = IngredientInRecipe.objects.filter(
-            recipe__shopping_ingredients__user=user
+            recipe__shoppingcarts__user=user
+            # recipe__shopping_ingredients__user=user
         ).values(product=F('ingredient__name'),
                  unit=F('ingredient__measurement_unit')).annotate(
                      amount=Sum('amount')).order_by('ingredient__name')
