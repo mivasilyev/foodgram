@@ -28,7 +28,6 @@ class BaseFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == 'no':
             return queryset.filter(**self.filter_kwargs)
-
             # return queryset.filter(recipes__exact=None)
             # return queryset.filter('%(filter_field)s' is None)
         if self.value() == 'yes':
@@ -174,7 +173,7 @@ class IngredientAdmin(admin.ModelAdmin):
     @admin.display(description='Рецептов с ингредиентом')
     # Код подсчета рецептов не совпадает с аналогичным для тегов.
     def recipes_count(self, recipe):
-        return recipe.ingredients_in_recipe.all().count()
+        return recipe.ingredients.all().count()
 
 
 @admin.register(Recipe)
@@ -209,7 +208,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Продукты')
     def view_ingredients(self, recipe):
-        ingredients_qs = recipe.ingredients_in_recipe.all()
+        ingredients_qs = recipe.ingredients.all()
         ingredients = [ingr.ingredient.name for ingr in ingredients_qs]
         return ', '.join(ingredients)
 

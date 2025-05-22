@@ -22,6 +22,7 @@ from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Subscribe,
     Tag, User
 )
+from rest_framework.settings import api_settings
 
 
 class ExtendedUserViewSet(UserViewSet):
@@ -136,6 +137,9 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    # pagination_class = LimitPageNumberPagination
+    # search_fields = ('@name', '@author__username', '@tags__name')
+    # http_method_names = ('get', 'patch', 'post', 'delete')
 
     def get_serializer_class(self, *args, **kwargs):
         # Для показа рецептов используем отдельный сериализатор.
@@ -143,36 +147,41 @@ class RecipeViewSet(ModelViewSet):
             return GetRecipeSerializer
         return RecipeSerializer
 
+    # def get_serializer_class(self):
+    #     if self.request.method in SAFE_METHODS:
+    #         return RecipeReadSerializer
+    #     return RecipeWriteSerializer
+
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
-    def create(self, request, *args, **kwargs):
-        # Метод переопределяем по рекомендации наставника чтобы после создания
-        # рецепта вернуть его другим сериализатором.
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer)
-        # После сохранения рецепта возвращаем объект другим сериализатором.
-        return Response(
-            GetRecipeSerializer(instance).data,
-            status=status.HTTP_201_CREATED
-        )
+    # def create(self, request, *args, **kwargs):
+    #     # Метод переопределяем по рекомендации наставника чтобы после создания
+    #     # рецепта вернуть его другим сериализатором.
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     instance = self.perform_create(serializer)
+    #     # После сохранения рецепта возвращаем объект другим сериализатором.
+    #     return Response(
+    #         GetRecipeSerializer(instance).data,
+    #         status=status.HTTP_201_CREATED
+    #     )
 
-    def update(self, request, *args, **kwargs):
-        # Метод переопределяем по рекомендации наставника чтобы после редакт-я
-        # рецепта вернуть его другим сериализатором.
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        # После сохранения рецепта возвращаем объект другим сериализатором.
-        return Response(
-            GetRecipeSerializer(instance).data,
-            status=status.HTTP_200_OK
-        )
+    # def update(self, request, *args, **kwargs):
+    #     # Метод переопределяем по рекомендации наставника чтобы после редакт-я
+    #     # рецепта вернуть его другим сериализатором.
+    #     partial = kwargs.pop('partial', False)
+    #     instance = self.get_object()
+    #     serializer = self.get_serializer(
+    #         instance, data=request.data, partial=partial
+    #     )
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_update(serializer)
+    #     # После сохранения рецепта возвращаем объект другим сериализатором.
+    #     return Response(
+    #         GetRecipeSerializer(instance).data,
+    #         status=status.HTTP_200_OK
+    #     )
 
     def add_recipe_mark(self, recipe_id, model):
         """Добавляем к рецепту отметку избранное/корзина."""
@@ -267,3 +276,45 @@ class RecipeViewSet(ModelViewSet):
             as_attachment=True,
             filename=SHOPPING_CART_FILENAME
         )
+
+# =======================================
+
+#     def get_queryset(self):
+#         ...
+
+
+#     def delete_user_recipe(self, pk, model):
+#         ...
+
+#     @action(
+#         detail=True, permission_classes=(IsAuthenticated,), methods=('POST',)
+#     )
+#     def favorite(self, request, pk):
+#         ...
+
+#     @favorite.mapping.delete
+#     def delete_favorite(self, request, pk):
+#         ...
+
+#     @action(
+#         detail=True, permission_classes=(IsAuthenticated,), methods=('POST',)
+#     )
+#     def shopping_cart(self, request, pk):
+#         ...
+
+#     @shopping_cart.mapping.delete
+#     def delete_shopping_cart(self, request, pk):
+#         ...
+
+#     @action(detail=False, permission_classes=(IsAuthenticated,))
+#     def download_shopping_cart(self, request):
+#         ...
+
+
+#     @staticmethod
+#     def ingredients_to_text(ingredients):
+#         ...
+
+#     @action(detail=True, url_path='get-link')
+#     def get_link(self, request, pk=None):
+#         ...

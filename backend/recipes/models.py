@@ -186,7 +186,8 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'продукты в рецепте'
         verbose_name_plural = 'Продукты в рецепте'
-        default_related_name = 'ingredients_in_recipe'
+        default_related_name = 'ingredients'
+        # default_related_name = 'ingredients_in_recipe'
         ordering = ('ingredient__name', )
         constraints = [
             # Продукт входит в рецепт один раз.
