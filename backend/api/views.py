@@ -1,11 +1,14 @@
+from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
-from django.http import FileResponse, HttpResponseBadRequest
+from django.http import (
+    FileResponse, HttpResponseBadRequest, HttpResponseNotFound
+)
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
@@ -14,7 +17,7 @@ from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     ExtendedUserSerializer, GetRecipeSerializer, IngredientSerializer,
     RecipeSerializer, ShortRecipeSerializer, SubscribeUserSerializer,
-    TagSerializer  #  SubscribeSerializer,
+    TagSerializer
 )
 from api.service import shopping_list_render
 from constants import SHOPPING_CART_FILENAME
@@ -22,11 +25,17 @@ from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Subscribe,
     Tag, User
 )
-from rest_framework.settings import api_settings
 
 
 class ExtendedUserViewSet(UserViewSet):
     """Расширение вьюсета пользователя djoser для работы с подпиской."""
+
+    permission_classes = [IsAuthorOrReadOnly, AllowAny,]
+
+    @action(["get", "put", "patch", "delete"], detail=False,
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        return super().me(request)
 
     @action(["post", "delete"], detail=True)
     def subscribe(self, request, *args, **kwargs):
@@ -34,42 +43,47 @@ class ExtendedUserViewSet(UserViewSet):
         user = self.request.user
         author = get_object_or_404(User, id=kwargs['id'])
 
-        if request.method == 'POST':
-            # Подписываемся на пользователя.
-            # Проверка на самоподписку и повторную подписку.
-
-            # print('==========', user, author)
-            # print(SubscribeUserSerializer.Meta.fields)
-            # serializer = SubscribeUserSerializer(
-            #     data={'username': author.username, 'subscribed': author.id},
-            #     context=self.get_serializer_context(),
-            # )
-            # print(serializer.is_valid(), serializer.errors)
-            # serializer.is_valid(raise_exception=True)
-            # serializer.save()
-            # return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-            if author == user:
-                return HttpResponseBadRequest('Запрещена подписка на себя.')
-            subscription, created = Subscribe.objects.get_or_create(
-                user=user, subscribed=author
-            )
-            if not created:
-                return HttpResponseBadRequest('Повторная подписка запрещена.')
-            return Response(
-                SubscribeUserSerializer(
-                    author,
-                    context={'request': request}
-                ).data,
-                status=status.HTTP_201_CREATED
-            )
-
-        # Отписываемся от пользователя.
-        # get_object_or_404 не подходит, т.к. надо возвращать код 400.
-        if Subscribe.objects.filter(user=user, subscribed=author).exists():
-            Subscribe.objects.filter(user=user, subscribed=author).delete()
+        if request.method != 'POST':
+            # Отписываемся от пользователя.
+            get_object_or_404(Subscribe, user=user, subscribed=author).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return HttpResponseBadRequest('Такой подписки не существует.')
+            # get_object_or_404 не подходит, т.к. надо возвращать код 400.
+            # if Subscribe.objects.filter(user=user, subscribed=author).exists():
+            #     Subscribe.objects.filter(user=user, subscribed=author).delete()
+            #     return Response(status=status.HTTP_204_NO_CONTENT)
+            # return HttpResponseBadRequest('Такой подписки не существует.')
+
+        # Подписываемся на пользователя.
+        # Проверка на самоподписку и повторную подписку.
+
+        # serializer = SubscribeUserSerializer(
+        #     data={'username': author.username, 'subscribed': author.id},
+        #     context=self.get_serializer_context(),
+        # )
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        try:
+            if author == user:
+                raise ValidationError("Запрещена подписка на себя.")
+        except ValidationError as e:
+            # Просто raise ValidationError без HttpResponseBadRequest
+            # здесь не работает.
+            return HttpResponseBadRequest(str(e))
+
+        subscription, created = Subscribe.objects.get_or_create(
+            user=user, subscribed=author
+        )
+        if not created:
+            return HttpResponseBadRequest('Повторная подписка запрещена.')
+        return Response(
+            SubscribeUserSerializer(
+                author,
+                context={'request': request}
+            ).data,
+            status=status.HTTP_201_CREATED
+        )
 
     @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
@@ -211,17 +225,20 @@ class RecipeViewSet(ModelViewSet):
         # Запрос нужен, чтобы получить 404, если нет такого рецепта в Recipe.
         # без него проваливаются тесты на попытку удалить несуществующий
         # рецепт из корзины/избранного.
-        get_object_or_404(Recipe, id=recipe_id)
+        # get_object_or_404(Recipe, id=recipe_id)
         # calling_func = inspect.stack()[1][3]
         # model_choice = {
         #     'delete': Favorite,
         #     'shopping_cart': ShoppingCart,
         # }
         # model = model_choice[calling_func]
-        if model.objects.filter(user=user, recipe_id=recipe_id).exists():
-            model.objects.filter(user=user, recipe_id=recipe_id).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return HttpResponseBadRequest('Нет такой отметки на рецепте.')
+        get_object_or_404(model, user=user, recipe_id=recipe_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # if model.objects.filter(user=user, recipe_id=recipe_id).exists():
+        #     model.objects.filter(user=user, recipe_id=recipe_id).delete()
+        #     return Response(status=status.HTTP_204_NO_CONTENT)
+        # return HttpResponseBadRequest('Нет такой отметки на рецепте.')
 
     @action(methods=["post"], detail=True)
     def favorite(self, request, pk):
@@ -248,15 +265,12 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=[AllowAny])
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
-        # print(pk, type(pk))
         if Recipe.objects.filter(id=pk).exists():
-            # recipe = get_object_or_404(Recipe, id=pk)
-            domain = request.META.get('HTTP_HOST')
-            response = {'short-link': f'{domain}/s/{hex(int(pk))}'}
-            return Response(response, status=status.HTTP_200_OK)
-        else:
-            # если объекта нет ===============================================
-            pass
+            # domain = request.META.get('HTTP_HOST')
+            # respon = {'short-link': f'{domain}/s/{hex(int(pk))}'}
+            respon = {'short-link': f'{request.META.get("HTTP_HOST")}/s/{pk}'}
+            return Response(respon, status=status.HTTP_200_OK)
+        return HttpResponseNotFound()
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):
