@@ -170,6 +170,8 @@ class RecipeViewSet(ModelViewSet):
         return serializer.save(author=self.request.user)
 
     # def create(self, request, *args, **kwargs):
+    #     print(request)
+    #     print(self.request.data)
     #     # Метод переопределяем по рекомендации наставника чтобы после создания
     #     # рецепта вернуть его другим сериализатором.
     #     serializer = self.get_serializer(data=request.data)

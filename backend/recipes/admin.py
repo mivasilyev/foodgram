@@ -160,7 +160,7 @@ class UsedIngredientFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'yes':
-            return queryset.exclude(ingredients__exact=None)
+            return queryset.exclude(ingredients_in_recipe__exact=None)
 
 
 @admin.register(Ingredient)
@@ -175,7 +175,7 @@ class IngredientAdmin(admin.ModelAdmin):
     @admin.display(description='Рецептов с ингредиентом')
     # Код подсчета рецептов не совпадает с аналогичным для тегов.
     def recipes_count(self, ingredient):
-        return ingredient.ingredients.all().count()
+        return ingredient.ingredients_in_recipe.all().count()
 
 
 @admin.register(Recipe)
@@ -214,7 +214,7 @@ class RecipeAdmin(admin.ModelAdmin):
             (
                 f'{ingr.ingredient.name} {ingr.amount} '
                 f'{ingr.ingredient.measurement_unit}'
-            ) for ingr in recipe.ingredients.all()
+            ) for ingr in recipe.ingredients_in_recipe.all()
         ]
         return ',\n'.join(components)
 
