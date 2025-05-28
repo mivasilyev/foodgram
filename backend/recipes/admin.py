@@ -28,10 +28,7 @@ class BaseFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == 'no':
             return queryset.filter(**self.filter_kwargs)
-            # return queryset.filter(recipes__exact=None)
-            # return queryset.filter('%(filter_field)s' is None)
         if self.value() == 'yes':
-            # return queryset.exclude(recipes__exact=None)
             return queryset.exclude(**self.filter_kwargs)
 
 
@@ -43,17 +40,6 @@ class RecipeFilter(BaseFilter):
         ('yes', 'Есть рецепты'),
     )
 
-    # def lookups(self, request, model_admin):
-    #     return self.choice
-
-    # def queryset(self, request, queryset):
-    #     if self.value() == 'no':
-    #         return queryset.filter(recipes__exact=None)
-    #     if self.value() == 'yes':
-    #         return queryset.exclude(recipes__exact=None)
-
-
-# class FollowsFilter(admin.SimpleListFilter):
 
 class FollowsFilter(BaseFilter):
 
@@ -63,19 +49,6 @@ class FollowsFilter(BaseFilter):
         ('no', 'Нет подписок'),
         ('yes', 'Есть подписки'),
     )
-
-    # def lookups(self, request, model_admin):
-    #     return self.choice
-    #     # return (
-    #     #     ('no', 'Нет подписок'),
-    #     #     ('yes', 'Есть подписки'),
-    #     # )
-
-    # def queryset(self, request, queryset):
-    #     if self.value() == 'no':
-    #         return queryset.filter(is_subscribed__exact=None)
-    #     if self.value() == 'yes':
-    #         return queryset.exclude(is_subscribed__exact=None)
 
 
 class RecipesCountMixin:
@@ -101,7 +74,7 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
     readonly_fields = ['avatar_preview']
     search_fields = ('email', 'username')
     list_filter = UserAdmin.list_filter + (
-        RecipeFilter, FollowsFilter  # 'first_name'
+        RecipeFilter, FollowsFilter
     )
 
     @admin.display(description='ФИО')
@@ -203,8 +176,6 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Теги')
     def view_tags(self, recipe):
-        # tags_qs = recipe.tags.all()
-        # tags = [tag.name for tag in recipe.tags.all()]
         return ',\n'.join([tag.name for tag in recipe.tags.all()])
 
     @mark_safe

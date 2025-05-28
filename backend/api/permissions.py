@@ -1,4 +1,3 @@
-# from djoser.permissions import CurrentUserOrAdminOrReadOnly
 from rest_framework import permissions
 
 
@@ -10,15 +9,3 @@ class IsAuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
             request.method in permissions.SAFE_METHODS
             or obj.author == request.user
         )
-
-
-# class UsersMeUserPermission(CurrentUserOrAdminOrReadOnly):
-#     """Ограничение доступа незарегистрированным пользователям к users/me/."""
-
-#     # Без этого пермишена все ломается.
-#     def has_permission(self, request, view):
-#         return (
-#             request.method in permissions.SAFE_METHODS
-#             and 'users/me/' not in request.path
-#             or request.user.is_authenticated
-#         )

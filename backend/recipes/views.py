@@ -10,7 +10,6 @@ from recipes.models import Recipe
 @permission_classes([AllowAny])
 def short_link_redirect(request, recipe_id):
     """Редирект коротких ссылок на рецепт."""
-    # recipe_id = int(short_link, 16)
     if Recipe.objects.filter(id=recipe_id).exists():
         return redirect(f'/recipes/{recipe_id}/')
     return HttpResponseNotFound

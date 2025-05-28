@@ -5,7 +5,7 @@ from django.db import models
 from constants import (
     DEFAULT_USER_AVATAR, LONG_MAX_LENGTH, MAX_LENGTH, MID_MAX_LENGTH,
     MIN_COOKING_MINUTES, MIN_INGREDIENT_AMOUNT, SHORT_MAX_LENGTH,
-    TAG_MAX_LENGTH, USERNAME_PATTERN  # TAG_PATTERN
+    TAG_MAX_LENGTH, USERNAME_PATTERN
 )
 from backend.settings import AVATARS_URL
 
@@ -28,7 +28,6 @@ class User(AbstractUser):
     last_name = models.CharField(verbose_name='Фамилия', max_length=MAX_LENGTH)
     avatar = models.ImageField(
         verbose_name='Ссылка на аватар',
-        # upload_to='user_avatars',
         upload_to=AVATARS_URL,
         blank=True,
         default=DEFAULT_USER_AVATAR
@@ -93,7 +92,6 @@ class Tag(models.Model):
         verbose_name='Слаг',
         max_length=TAG_MAX_LENGTH,
         unique=True,
-        # validators=(RegexValidator(regex=TAG_PATTERN), )
     )
 
     class Meta:
@@ -119,7 +117,6 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        # default_related_name = 'ingredient'
         verbose_name = 'продукт'
         verbose_name_plural = 'Продукты'
         ordering = ('name', )
@@ -186,7 +183,6 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'продукты в рецепте'
         verbose_name_plural = 'Продукты в рецепте'
-        # default_related_name = 'ingredients'
         default_related_name = 'ingredients_in_recipe'
         ordering = ('ingredient__name', )
         constraints = [
@@ -237,7 +233,6 @@ class Favorite(BaseMark):
     class Meta(BaseMark.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
-        # default_related_name = 'favorites'
 
 
 class ShoppingCart(BaseMark):
@@ -246,4 +241,3 @@ class ShoppingCart(BaseMark):
     class Meta(BaseMark.Meta):
         verbose_name = 'корзина'
         verbose_name_plural = 'Корзины'
-        # default_related_name = 'shopping_ingredients'

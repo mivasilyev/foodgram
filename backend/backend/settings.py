@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'Default secret key')
@@ -86,7 +90,6 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-            # 'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -131,7 +134,6 @@ REST_FRAMEWORK = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
-        # 'user': ['api.permissions.UsersMeUserPermission'],
         'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
