@@ -1,9 +1,13 @@
+import requests
+from requests import get
+
 from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.http import (
     FileResponse, HttpResponseBadRequest, HttpResponseNotFound
 )
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status
@@ -64,19 +68,15 @@ class ExtendedUserViewSet(UserViewSet):
         # serializer.save()
         # return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        try:
-            if author == user:
-                raise ValidationError("Запрещена подписка на себя.")
-        except ValidationError as e:
-            # Просто raise ValidationError без HttpResponseBadRequest
-            # здесь не работает.
-            return HttpResponseBadRequest(str(e))
+        if author == user:
+            return HttpResponseBadRequest('Запрещена подписка на себя.')
 
         subscription, created = Subscribe.objects.get_or_create(
             user=user, subscribed=author
         )
         if not created:
-            return HttpResponseBadRequest('Повторная подписка запрещена.')
+            return HttpResponseBadRequest(f'Подписка на {author} уже есть.')
+
         return Response(
             SubscribeUserSerializer(
                 author,
@@ -267,12 +267,27 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=[AllowAny])
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
+        # absolute_url = request.build_absolute_uri()
+        # prefix = absolute_url - path
+        # print(request.get_full_path)
         if Recipe.objects.filter(id=pk).exists():
-            # domain = request.META.get('HTTP_HOST')
+            # scheme = request.scheme
+            # path = request.path
+            # host = request.get_host()  # request.META.get('HTTP_HOST')
+            url = reverse('recipes:short_link', kwargs={'recipe_id': pk})
+            # print(scheme, host, url)
             # respon = {'short-link': f'{domain}/s/{hex(int(pk))}'}
-            respon = {'short-link': f'{request.META.get("HTTP_HOST")}/s/{pk}'}
+            # respon = {'short-link': f'{request.META.get("HTTP_HOST")}/s/{pk}'}
+            respon = {'short-link': f'{request.get_host()}{url}'}
             return Response(respon, status=status.HTTP_200_OK)
         return HttpResponseNotFound()
+
+    # import requests
+
+    # base_url = 'https://example.com/api/'
+    # endpoint = 'data/'
+
+    # response = requests.get(base_url + endpoint)
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):
