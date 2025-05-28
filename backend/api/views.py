@@ -30,7 +30,7 @@ from recipes.models import (
 class ExtendedUserViewSet(UserViewSet):
     """Расширение вьюсета пользователя djoser для работы с подпиской."""
 
-    permission_classes = [IsAuthorOrReadOnly, AllowAny,]
+    permission_classes = [IsAuthorOrReadOnly, AllowAny, ]
 
     @action(["get", "put", "patch", "delete"], detail=False,
             permission_classes=[IsAuthenticated])

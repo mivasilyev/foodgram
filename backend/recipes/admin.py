@@ -54,7 +54,7 @@ class FollowsFilter(BaseFilter):
 class RecipesCountMixin:
     # Подсчет количества рецептов, связанных с объектом смежной модели.
 
-    list_display = ['recipes_count',]
+    list_display = ['recipes_count', ]
 
     @admin.display(description='Рецептов')
     def recipes_count(self, author):
