@@ -198,8 +198,8 @@ class IngredientInRecipe(models.Model):
                 f'{self.ingredient.measurement_unit}')
 
 
-class BaseMark(models.Model):
-    """Базовый класс для избранного и корзины."""
+class Mark(models.Model):
+    """Базовый класс для отметок (избранного и корзины)."""
 
     user = models.ForeignKey(
         User,
@@ -227,17 +227,17 @@ class BaseMark(models.Model):
         return f'{self.user.username} - {self.recipe.name}'
 
 
-class Favorite(BaseMark):
+class Favorite(Mark):
     """Добавление рецептов в избранное."""
 
-    class Meta(BaseMark.Meta):
+    class Meta(Mark.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
 
 
-class ShoppingCart(BaseMark):
+class ShoppingCart(Mark):
     """Добавление рецептов в список покупок."""
 
-    class Meta(BaseMark.Meta):
+    class Meta(Mark.Meta):
         verbose_name = 'корзина'
         verbose_name_plural = 'Корзины'

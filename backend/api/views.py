@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.http import (
     FileResponse, HttpResponseBadRequest, HttpResponseNotFound
@@ -41,19 +42,23 @@ class ExtendedUserViewSet(UserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Подписка и отписка от пользователя."""
         user = self.request.user
-        author = get_object_or_404(User, id=kwargs['id'])
+        # author = get_object_or_404(User, id=kwargs['id'])
 
         if request.method != 'POST':
             # Отписываемся от пользователя.
-            get_object_or_404(Subscribe, user=user, subscribed=author).delete()
+            get_object_or_404(
+                Subscribe, user=user, subscribed_id=kwargs['id']
+            ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        author = get_object_or_404(User, id=kwargs['id'])
         if author == user:
             return HttpResponseBadRequest('Запрещена подписка на себя.')
-        subscription, created = Subscribe.objects.get_or_create(
+        _, created = Subscribe.objects.get_or_create(
             user=user, subscribed=author
         )
         if not created:
             return HttpResponseBadRequest(f'Подписка на {author} уже есть.')
+            # raise ValidationError(f'Подписка на {author} уже есть.')
         return Response(
             SubscribeUserSerializer(
                 author,
@@ -145,7 +150,10 @@ class RecipeViewSet(ModelViewSet):
             user=user, recipe=recipe
         )
         if not created:
-            return HttpResponseBadRequest('Запрещено повторное добавление.')
+            return HttpResponseBadRequest(
+                f'Запрещено повторное добавление рецепта {recipe_id} в '
+                f'{model._meta.verbose_name}.'
+            )
         return Response(
             ShortRecipeSerializer(recipe).data,
             status=status.HTTP_201_CREATED
@@ -156,15 +164,17 @@ class RecipeViewSet(ModelViewSet):
         get_object_or_404(model, user=user, recipe_id=recipe_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=["post"], detail=True)
+    @action(methods=["post", "delete"], detail=True)
     def favorite(self, request, pk):
-        """Добавляем рецепт в избранное."""
-        return self.add_recipe_mark(recipe_id=pk, model=Favorite)
-
-    @action(methods=["delete"], detail=True)
-    def delete(self, request, pk):
-        """Удаляем рецепт из избранного."""
+        if request.method == 'POST':
+            """Добавляем рецепт в избранное."""
+            return self.add_recipe_mark(recipe_id=pk, model=Favorite)
         return self.delete_recipe_mark(recipe_id=pk, model=Favorite)
+
+    # @action(methods=["delete"], detail=True)
+    # def delete(self, request, pk):
+    #     """Удаляем рецепт из избранного."""
+    #     return self.delete_recipe_mark(recipe_id=pk, model=Favorite)
 
     @action(methods=["post", "delete"], detail=True)
     def shopping_cart(self, request, pk):
@@ -178,12 +188,18 @@ class RecipeViewSet(ModelViewSet):
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
         if Recipe.objects.filter(id=pk).exists():
-            url = reverse('recipes:short_link', kwargs={'recipe_id': pk})
+            url = reverse('recipes:short_link', args=[pk])
+            # print(f'{request.get_host()}{url}')
+            # print(request.build_absolute_uri(url))
             return Response(
-                {'short-link': f'{request.get_host()}{url}'},
+                # {'short-link': f'{request.get_host()}{url}'},
+                {'short-link': request.build_absolute_uri(url)},
                 status=status.HTTP_200_OK
             )
-        return HttpResponseNotFound()
+        return HttpResponseNotFound('Запрошенного рецепта не существует.')
+
+# request.build_absolute_uri
+# request.get_full_path()
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):
@@ -192,9 +208,14 @@ class RecipeViewSet(ModelViewSet):
         recipe_qs = Recipe.objects.filter(shoppingcarts__user=user)
         product_qs = IngredientInRecipe.objects.filter(
             recipe__shoppingcarts__user=user
-        ).values(product=F('ingredient__name'),
-                 unit=F('ingredient__measurement_unit')).annotate(
-                     amount=Sum('amount')).order_by('ingredient__name')
+        ).values(
+            product=F('ingredient__name'),
+            unit=F('ingredient__measurement_unit')
+        ).annotate(
+            amount=Sum('amount')
+        ).order_by(
+            'ingredient__name'
+        )
         return FileResponse(
             shopping_list_render(recipe_qs=recipe_qs, products_qs=product_qs),
             content_type='text/plain',

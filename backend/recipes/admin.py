@@ -15,39 +15,40 @@ admin.site.unregister(Group)
 class BaseFilter(admin.SimpleListFilter):
     """Базовый класс для фильтра рецептов и подписок."""
 
-    parameter_name = 'recipes'
-    filter_kwargs = {f"{parameter_name}__exact": None}
-    choice = (
-        ('no', 'Нет'),
-        ('yes', 'Есть'),
+    selections = (
+        ('0', 'Нет'),
+        ('1', 'Есть'),
     )
 
     def lookups(self, request, model_admin):
-        return self.choice
+        return self.selections
 
     def queryset(self, request, queryset):
-        if self.value() == 'no':
+        if self.value() == '0':
             return queryset.filter(**self.filter_kwargs)
-        if self.value() == 'yes':
+        if self.value() == '1':
             return queryset.exclude(**self.filter_kwargs)
 
 
 class RecipeFilter(BaseFilter):
 
     title = 'Наличие рецептов'
-    choice = (
-        ('no', 'Нет рецептов'),
-        ('yes', 'Есть рецепты'),
+    parameter_name = 'recipes'
+    filter_kwargs = {f"{parameter_name}__exact": None}
+    selections = (
+        ('0', 'Нет рецептов'),
+        ('1', 'Есть рецепты'),
     )
 
 
 class FollowsFilter(BaseFilter):
 
     title = 'Пользователь подписан'
-    parameter_name = 'is_subscribed'
-    choice = (
-        ('no', 'Нет подписок'),
-        ('yes', 'Есть подписки'),
+    parameter_name = 'follows'
+    filter_kwargs = {f"{parameter_name}__exact": None}
+    selections = (
+        ('0', 'Нет подписок'),
+        ('1', 'Есть подписки'),
     )
 
 
@@ -176,7 +177,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Теги')
     def view_tags(self, recipe):
-        return ',\n'.join([tag.name for tag in recipe.tags.all()])
+        return '<br>'.join([tag.name for tag in recipe.tags.all()])
 
     @mark_safe
     @admin.display(description='Продукты')
@@ -187,7 +188,7 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'{ingr.ingredient.measurement_unit}'
             ) for ingr in recipe.ingredients_in_recipe.all()
         ]
-        return ',\n'.join(components)
+        return '<br>'.join(components)
 
     @mark_safe
     @admin.display(description='Превью')
