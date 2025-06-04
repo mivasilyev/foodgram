@@ -5,8 +5,6 @@ from django.core.validators import MinValueValidator
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueValidator
 
 from constants import MIN_COOKING_MINUTES, MIN_INGREDIENT_AMOUNT
 from recipes.models import (
@@ -32,8 +30,6 @@ class ExtendedUserSerializer(UserSerializer):
         return (
             self.context
             and self.context.get('request').user.is_authenticated
-            # and self.context.get('request').user.follows.filter(
-            #     subscribed=author).exists()
             and Subscribe.objects.filter(
                 user=self.context.get('request').user,
                 subscribed=author
@@ -55,13 +51,6 @@ class SubscribeUserSerializer(ExtendedUserSerializer):
         read_only_fields = fields
 
     def get_recipes(self, author):
-        # recipes = author.recipes.all()
-        # if self.context:
-        #     recipes_limit = self.context.get('request').GET.get(
-        #         'recipes_limit', 10**10
-        #     )
-        #     if recipes_limit:
-        #         recipes = author.recipes.all()[:int(recipes_limit) - 1]
         return ShortRecipeSerializer(
             author.recipes.all()[:int(
                 self.context.get('request').GET.get('recipes_limit', 10**10)
@@ -91,16 +80,6 @@ class WriteIngredientInRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор записи для модели связи рецептов и продуктов."""
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    # id = serializers.IntegerField(
-    #     source='ingredient.id',
-    #     validators=[
-    #         UniqueValidator(
-    #             queryset=IngredientInRecipe.objects.all(),
-    #             # lookup=
-    #             message="Продукта с таким ID не существует."
-    #         )
-    #     ]
-    # )
     amount = serializers.FloatField(
         validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT)]
     )
@@ -108,14 +87,6 @@ class WriteIngredientInRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = IngredientInRecipe
         fields = ('id', 'amount',)
-        # read_only_fields = ('id',)  # без этой строки тоже работает.
-
-    # def validate_id(self, value):
-    #     try:
-    #         Ingredient.objects.get(id=value)
-    #     except Ingredient.DoesNotExist:
-    #         raise ValidationError(f'Продукта {value} нет в базе.')
-    #     return value
 
     def to_representation(self, instance):
         # Читаем объект другим сериализатором.
@@ -188,9 +159,7 @@ class GetRecipeSerializer(BaseRecipeSerializer):
     )
 
     class Meta(BaseRecipeSerializer.Meta):
-        # fields = BaseRecipeSerializer.Meta.fields + ['ingredients', ]
         fields = [*BaseRecipeSerializer.Meta.fields, 'ingredients', ]
-        # read_only_fields = BaseRecipeSerializer.Meta.fields
         read_only_fields = fields
 
 
@@ -222,38 +191,13 @@ class RecipeSerializer(BaseRecipeSerializer):
             raise serializers.ValidationError(
                 f'В рецепте повторяются {name}: {duplicates}.'
             )
-        # print('return')
         return data
 
     def validate_ingredients(self, ingredients):
-        print('validation:', ingredients)
         return self.check_data(ingredients, 'продукты')
-        # if not ingredients:
-        #     print('not ingredients')
-        #     raise serializers.ValidationError(
-        #         'Рецепт должен содержать продукты.'
-        #     )
-        # duplicated_ingredients = self.find_duplicates(ingredients)
-        # if duplicated_ingredients:
-        #     raise serializers.ValidationError(
-        #         'Продукты не должны повторяться. В рецепте повторяются '
-        #         f'{duplicated_ingredients}.'
-        #     )
-        # return ingredients
 
     def validate_tags(self, tags):
         return self.check_data(tags, 'теги')
-        # if not tags:
-        #     raise serializers.ValidationError(
-        #         'Рецепт должен иметь хотя бы один тег.'
-        #     )
-        # duplicated_tags = self.find_duplicates(tags)
-        # if duplicated_tags:
-        #     raise serializers.ValidationError(
-        #         'Теги не должны повторяться. В рецепте повторяются '
-        #         f'{duplicated_tags}'
-        #     )
-        # return tags
 
     def validate_image(self, value):
         if value is None:
@@ -261,13 +205,6 @@ class RecipeSerializer(BaseRecipeSerializer):
                 'В рецепте должна быть картинка.'
             )
         return value
-
-    # def validate_cooking_time(self, value):
-    #     if value < MIN_COOKING_MINUTES:
-    #         raise serializers.ValidationError(
-    #             'Время готовки должно быть больше.'
-    #         )
-    #     return value
 
     def validate(self, data):
         if 'image' not in data:
@@ -286,40 +223,20 @@ class RecipeSerializer(BaseRecipeSerializer):
 
     def fill_ingredients(self, recipe, ingredients):
         """Заполняем ингредиенты в рецепт."""
-        # Устанавливаем связи с продуктами.
-        # for ingredient in ingredients:
-        #     print(ingredient['id'])
-        #     IngredientInRecipe.objects.create(
-        #         recipe=recipe,
-        #         ingredient=ingredient['id'],
-        #         amount=ingredient['amount']
-        #     )
-
-        # ingredient_records = [
-        #     IngredientInRecipe(
-        #         recipe=recipe,
-        #         ingredient_id=ingredient['ingredient']['id'],
-        #         amount=ingredient['amount']
-        #     ) for ingredient in ingredients
-        # ]
 
         IngredientInRecipe.objects.bulk_create(
             [
                 IngredientInRecipe(
                     recipe=recipe,
                     ingredient=ingredient['id'],
-                    # ingredient_id=ingredient['ingredient']['id'],
                     amount=ingredient['amount']
                 ) for ingredient in ingredients
             ]
         )
-        # print('success')
 
     def create(self, validated_data):
-        # print('---creation:', validated_data)
         # Создаем рецепт.
         ingredients = validated_data.pop('ingredients_in_recipe')
-        # print('===ingredients', ingredients)
         tags = validated_data.pop('tags')
         recipe = super().create(validated_data)
         self.fill_ingredients(recipe, ingredients)
@@ -340,13 +257,3 @@ class RecipeSerializer(BaseRecipeSerializer):
 
     def to_representation(self, instance):
         return GetRecipeSerializer(instance).to_representation(instance)
-
-        # representation = super().to_representation(instance)
-        # tags = representation['tags']
-        # new_tags = []
-        # for tag in tags:
-        #     tag_object = Tag.objects.get(id=tag)
-        #     new_tag = TagSerializer(tag_object).data
-        #     new_tags.append(new_tag)
-        # representation['tags'] = new_tags
-        # return representation

@@ -24,7 +24,3 @@ SHOPPING_CART_FILENAME = 'shopping_cart.txt'
 # Файлы с заполнением БД.
 INGREDIENTS = 'ingredients.csv'
 TAGS = 'tags.csv'
-DATA_FILES_CSV = [
-    INGREDIENTS,
-    TAGS,
-]

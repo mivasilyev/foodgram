@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.http import (
     FileResponse, HttpResponseBadRequest, HttpResponseNotFound
@@ -42,7 +41,6 @@ class ExtendedUserViewSet(UserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Подписка и отписка от пользователя."""
         user = self.request.user
-        # author = get_object_or_404(User, id=kwargs['id'])
 
         if request.method != 'POST':
             # Отписываемся от пользователя.
@@ -58,7 +56,6 @@ class ExtendedUserViewSet(UserViewSet):
         )
         if not created:
             return HttpResponseBadRequest(f'Подписка на {author} уже есть.')
-            # raise ValidationError(f'Подписка на {author} уже есть.')
         return Response(
             SubscribeUserSerializer(
                 author,
@@ -93,7 +90,6 @@ class ExtendedUserViewSet(UserViewSet):
                 response = {'avatar': serializer.data['avatar']}
                 return Response(response, status=status.HTTP_200_OK)
             return HttpResponseBadRequest('Нет аватара.')
-
         # Удаление аватара пользователя.
         user = self.request.user
         serializer = ExtendedUserSerializer(
@@ -171,11 +167,6 @@ class RecipeViewSet(ModelViewSet):
             return self.add_recipe_mark(recipe_id=pk, model=Favorite)
         return self.delete_recipe_mark(recipe_id=pk, model=Favorite)
 
-    # @action(methods=["delete"], detail=True)
-    # def delete(self, request, pk):
-    #     """Удаляем рецепт из избранного."""
-    #     return self.delete_recipe_mark(recipe_id=pk, model=Favorite)
-
     @action(methods=["post", "delete"], detail=True)
     def shopping_cart(self, request, pk):
         """Работа с корзиной покупок."""
@@ -189,17 +180,11 @@ class RecipeViewSet(ModelViewSet):
         """Получение короткой ссылки."""
         if Recipe.objects.filter(id=pk).exists():
             url = reverse('recipes:short_link', args=[pk])
-            # print(f'{request.get_host()}{url}')
-            # print(request.build_absolute_uri(url))
             return Response(
-                # {'short-link': f'{request.get_host()}{url}'},
                 {'short-link': request.build_absolute_uri(url)},
                 status=status.HTTP_200_OK
             )
         return HttpResponseNotFound('Запрошенного рецепта не существует.')
-
-# request.build_absolute_uri
-# request.get_full_path()
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):
