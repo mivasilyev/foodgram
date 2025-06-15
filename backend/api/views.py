@@ -204,7 +204,7 @@ class RecipeViewSet(ModelViewSet):
             'ingredient__name'
         )
         return FileResponse(
-            shopping_list_render(recipes=recipe_qs, products_qs=product_qs),
+            shopping_list_render(recipes=recipe_qs, products=product_qs),
             content_type='text/plain',
             as_attachment=True,
             filename=SHOPPING_CART_FILENAME
