@@ -196,7 +196,6 @@ class WriteRecipeSerializer(BaseRecipeSerializer):
     def validate_tags(self, tags):
         return self.check_data(tags, 'теги')
 
-
     def validate(self, data):
         if data['image'] is None:
             raise serializers.ValidationError(
