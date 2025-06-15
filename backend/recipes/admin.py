@@ -148,7 +148,7 @@ class UsedIngredientFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'yes':
-            return queryset.exclude(ingredients_in_recipe__exact=None)
+            return queryset.exclude(recipes__exact=None)
 
 
 @admin.register(Ingredient)
