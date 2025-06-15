@@ -48,6 +48,7 @@ class ExtendedUserViewSet(UserViewSet):
                 Subscribe, user=user, subscribed_id=kwargs['id']
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        # Подписываемся на пользователя.
         author = get_object_or_404(User, id=kwargs['id'])
         if author == user:
             return HttpResponseBadRequest('Запрещена подписка на себя.')
