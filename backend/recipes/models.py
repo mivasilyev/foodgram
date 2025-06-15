@@ -170,12 +170,15 @@ class IngredientInRecipe(models.Model):
     """Продукты в рецепте."""
 
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
+        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, verbose_name='Продукт'
+        Ingredient,
+        on_delete=models.CASCADE,
+        verbose_name='Продукт',
+        related_name='recipes'
     )
-    amount = models.FloatField(
+    amount = models.IntegerField(
         verbose_name='Мера',
         validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT)]
     )

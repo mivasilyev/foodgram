@@ -25,16 +25,19 @@ class BaseFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == '0':
-            return queryset.filter(**self.filter_kwargs)
+            return queryset.filter(**self.filter_kwargs())
         if self.value() == '1':
-            return queryset.exclude(**self.filter_kwargs)
+            return queryset.exclude(**self.filter_kwargs())
+
+    def filter_kwargs(self):
+        return {f"{self.parameter_name}__exact": None}
 
 
 class RecipeFilter(BaseFilter):
 
     title = 'Наличие рецептов'
     parameter_name = 'recipes'
-    filter_kwargs = {f"{parameter_name}__exact": None}
+    # filter_kwargs = {f"{parameter_name}__exact": None}
     selections = (
         ('0', 'Нет рецептов'),
         ('1', 'Есть рецепты'),
@@ -45,10 +48,21 @@ class FollowsFilter(BaseFilter):
 
     title = 'Пользователь подписан'
     parameter_name = 'follows'
-    filter_kwargs = {f"{parameter_name}__exact": None}
+    # filter_kwargs = {f"{parameter_name}__exact": None}
     selections = (
         ('0', 'Нет подписок'),
         ('1', 'Есть подписки'),
+    )
+
+
+class IsFollowedFilter(BaseFilter):
+
+    title = 'Есть подписчики'
+    parameter_name = 'authors'
+    # filter_kwargs = {f"{parameter_name}__exact": None}
+    selections = (
+        ('0', 'Нет подписчиков'),
+        ('1', 'Есть подписчики'),
     )
 
 
@@ -58,8 +72,8 @@ class RecipesCountMixin:
     list_display = ['recipes_count', ]
 
     @admin.display(description='Рецептов')
-    def recipes_count(self, author):
-        return author.recipes.all().count()
+    def recipes_count(self, obj):
+        return obj.recipes.count()
 
 
 @admin.register(User)
@@ -75,7 +89,7 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
     readonly_fields = ['avatar_preview']
     search_fields = ('email', 'username')
     list_filter = UserAdmin.list_filter + (
-        RecipeFilter, FollowsFilter
+        RecipeFilter, FollowsFilter, IsFollowedFilter
     )
 
     @admin.display(description='ФИО')
@@ -84,11 +98,11 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
 
     @admin.display(description='Подписок')
     def subscribed_count(self, user):
-        return user.follows.all().count()
+        return user.follows.count()
 
     @admin.display(description='Подписчиков')
     def authors_count(self, user):
-        return user.authors.all().count()
+        return user.authors.count()
 
     @mark_safe
     @admin.display(description='Аватар')
@@ -138,18 +152,34 @@ class UsedIngredientFilter(admin.SimpleListFilter):
 
 
 @admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
+class IngredientAdmin(RecipesCountMixin, admin.ModelAdmin):
     """Админка для продуктов."""
 
-    list_display = ('name', 'measurement_unit', 'recipes_count')
+    list_display = [
+        'name', 'measurement_unit', *RecipesCountMixin.list_display
+    ]
     list_display_links = ('name',)
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit', UsedIngredientFilter)
 
-    @admin.display(description='Рецептов с ингредиентом')
-    # Код подсчета рецептов не совпадает с аналогичным для тегов.
-    def recipes_count(self, ingredient):
-        return ingredient.ingredients_in_recipe.all().count()
+    # @admin.display(description='Рецептов')
+    # def recipes_count(self, ingredient):
+    #     # Код подсчета рецептов не совпадает с аналогичным для тегов.
+    #     return ingredient.ingredients_in_recipe.count()
+    #     # return ingredient.recipes.count()
+
+# Чтобы атрибут recipes стал доступен для объектов Ingredient, вам нужно
+# добавить обратное отношение от Ingredient к Recipe через модель
+# IngredientInRecipe. Это можно сделать с помощью поля ManyToManyField в
+# модели Ingredient.
+# Вам нужно: 1. Добавить поле recipes = models.ManyToManyField(Recipe,
+# through='IngredientInRecipe', related_name='ingredients') в модель
+# Ingredient.
+#
+# 2. Удалить или прокомментировать существующий код, который может
+# конфликтовать с новым отношением, если такой есть.
+# Это позволит вам получать доступ к рецептам, связанным с конкретным
+# ингредиентом, через атрибут recipes.
 
 
 @admin.register(Recipe)
@@ -172,23 +202,29 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe):
-        return recipe.favorites.all().count()
+        return recipe.favorites.count()
 
     @mark_safe
     @admin.display(description='Теги')
     def view_tags(self, recipe):
-        return '<br>'.join([tag.name for tag in recipe.tags.all()])
+        return '<br>'.join(tag.name for tag in recipe.tags.all())
 
     @mark_safe
     @admin.display(description='Продукты')
     def view_ingredients(self, recipe):
-        components = [
+        # components = [
+        #     (
+        #         f'{ingr.ingredient.name} {ingr.amount} '
+        #         f'{ingr.ingredient.measurement_unit}'
+        #     ) for ingr in recipe.ingredients_in_recipe.all()
+        # ]
+        # return '<br>'.join(components)
+        return '<br>'.join(
             (
                 f'{ingr.ingredient.name} {ingr.amount} '
                 f'{ingr.ingredient.measurement_unit}'
             ) for ingr in recipe.ingredients_in_recipe.all()
-        ]
-        return '<br>'.join(components)
+        )
 
     @mark_safe
     @admin.display(description='Превью')

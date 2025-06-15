@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-def shopping_list_render(recipe_qs, products_qs):
+def shopping_list_render(recipes, products_qs):
     """Получает сеты рецептов и продуктов и возвращает список покупок."""
 
     products = [
@@ -11,16 +11,13 @@ def shopping_list_render(recipe_qs, products_qs):
     ]
     recipes = [
         (f'{recipe.name} от автора {recipe.author.username}'
-         ) for recipe in recipe_qs
+         ) for recipe in recipes
     ]
 
     return '\n'.join([
-        'СПИСОК ПОКУПОК',
-        f'(составлен {datetime.now().date()})',
-        '\n',
+        f'СПИСОК ПОКУПОК (составлен {datetime.now().date()})',
         'ПРОДУКТЫ:',
         *products,
-        '\n',
         'ДЛЯ РЕЦЕПТОВ:',
         *recipes,
     ])

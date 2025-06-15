@@ -38,16 +38,11 @@ sudo docker exec foodgram-backend cp -r /app/static/. /backend_static/static/
 sudo docker exec foodgram-backend cp -r /app/docs/. /backend_static/docs/
 
 ```
-Выполнить импорт json-фикстур с продуктами и тегами:
+Выполнить импорт json-фикстур с продуктами и тегами
 ```
 sudo docker exec foodgram-backend python manage.py load_tags
 sudo docker exec foodgram-backend python manage.py load_ingredients
 ```
-вместо двух команд выше можно использовать (это тоже работает):
-```
-sudo docker exec foodgram-backend python manage.py loaddata tags.json ingredients.json
-```
-
 После запуска проект доступен [здесь](http://localhost/), [админ-зона](http://localhost/admin/), [документация к API](http://localhost/docs/).
 
 [Деплой на](https://foodg.run.place/), [админ-зона](https://foodg.run.place/admin/), [документация](https://foodg.run.place/docs/).

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.http import (
     FileResponse, HttpResponseBadRequest, HttpResponseNotFound
@@ -8,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -16,7 +18,7 @@ from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     ExtendedUserSerializer, GetRecipeSerializer, IngredientSerializer,
-    RecipeSerializer, ShortRecipeSerializer, SubscribeUserSerializer,
+    WriteRecipeSerializer, ShortRecipeSerializer, SubscribeUserSerializer,
     TagSerializer
 )
 from api.service import shopping_list_render
@@ -30,7 +32,7 @@ from recipes.models import (
 class ExtendedUserViewSet(UserViewSet):
     """Расширение вьюсета пользователя djoser для работы с подпиской."""
 
-    permission_classes = [IsAuthorOrReadOnly, AllowAny, ]
+    permission_classes = [IsAuthorOrReadOnly]  # , AllowAny,
 
     @action(["get", "put", "patch", "delete"], detail=False,
             permission_classes=[IsAuthenticated])
@@ -51,11 +53,21 @@ class ExtendedUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=kwargs['id'])
         if author == user:
             return HttpResponseBadRequest('Запрещена подписка на себя.')
+            # raise APIException(
+            #     "Запрещена подписка на себя.",
+            #     code=status.HTTP_400_BAD_REQUEST
+            # )
+            # raise ValidationError('Запрещена подписка на себя.')
         _, created = Subscribe.objects.get_or_create(
             user=user, subscribed=author
         )
         if not created:
             return HttpResponseBadRequest(f'Подписка на {author} уже есть.')
+            # raise APIException(
+            #     f'Подписка на {author} уже есть.',
+            #     code=status.HTTP_400_BAD_REQUEST
+            # )
+            # raise ValidationError(f'Подписка на {author} уже есть.')
         return Response(
             SubscribeUserSerializer(
                 author,
@@ -124,7 +136,7 @@ class RecipeViewSet(ModelViewSet):
     """Вьюсет рецептов."""
 
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = WriteRecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -133,17 +145,17 @@ class RecipeViewSet(ModelViewSet):
         # Для показа рецептов используем отдельный сериализатор.
         if self.action in ['list', 'retrieve']:
             return GetRecipeSerializer
-        return RecipeSerializer
+        return WriteRecipeSerializer
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
     def add_recipe_mark(self, recipe_id, model):
         """Добавляем к рецепту отметку избранное/корзина."""
-        user = self.request.user
+        # user = self.request.user
         recipe = get_object_or_404(Recipe, id=recipe_id)
         mark, created = model.objects.get_or_create(
-            user=user, recipe=recipe
+            user=self.request.user, recipe=recipe
         )
         if not created:
             return HttpResponseBadRequest(
@@ -156,8 +168,12 @@ class RecipeViewSet(ModelViewSet):
         )
 
     def delete_recipe_mark(self, recipe_id, model):
-        user = self.request.user
-        get_object_or_404(model, user=user, recipe_id=recipe_id).delete()
+        # user = self.request.user
+        get_object_or_404(
+            model,
+            user=self.request.user,
+            recipe_id=recipe_id
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=["post", "delete"], detail=True)
@@ -202,7 +218,7 @@ class RecipeViewSet(ModelViewSet):
             'ingredient__name'
         )
         return FileResponse(
-            shopping_list_render(recipe_qs=recipe_qs, products_qs=product_qs),
+            shopping_list_render(recipes=recipe_qs, products_qs=product_qs),
             content_type='text/plain',
             as_attachment=True,
             filename=SHOPPING_CART_FILENAME
