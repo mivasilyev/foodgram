@@ -37,7 +37,6 @@ class RecipeFilter(BaseFilter):
 
     title = 'Наличие рецептов'
     parameter_name = 'recipes'
-    # filter_kwargs = {f"{parameter_name}__exact": None}
     selections = (
         ('0', 'Нет рецептов'),
         ('1', 'Есть рецепты'),
@@ -48,7 +47,6 @@ class FollowsFilter(BaseFilter):
 
     title = 'Пользователь подписан'
     parameter_name = 'follows'
-    # filter_kwargs = {f"{parameter_name}__exact": None}
     selections = (
         ('0', 'Нет подписок'),
         ('1', 'Есть подписки'),
@@ -59,7 +57,6 @@ class IsFollowedFilter(BaseFilter):
 
     title = 'Есть подписчики'
     parameter_name = 'authors'
-    # filter_kwargs = {f"{parameter_name}__exact": None}
     selections = (
         ('0', 'Нет подписчиков'),
         ('1', 'Есть подписчики'),
@@ -67,7 +64,7 @@ class IsFollowedFilter(BaseFilter):
 
 
 class RecipesCountMixin:
-    # Подсчет количества рецептов, связанных с объектом смежной модели.
+    """Подсчет количества рецептов, связанных с объектом смежной модели."""
 
     list_display = ['recipes_count', ]
 
@@ -162,25 +159,6 @@ class IngredientAdmin(RecipesCountMixin, admin.ModelAdmin):
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit', UsedIngredientFilter)
 
-    # @admin.display(description='Рецептов')
-    # def recipes_count(self, ingredient):
-    #     # Код подсчета рецептов не совпадает с аналогичным для тегов.
-    #     return ingredient.ingredients_in_recipe.count()
-    #     # return ingredient.recipes.count()
-
-# Чтобы атрибут recipes стал доступен для объектов Ingredient, вам нужно
-# добавить обратное отношение от Ingredient к Recipe через модель
-# IngredientInRecipe. Это можно сделать с помощью поля ManyToManyField в
-# модели Ingredient.
-# Вам нужно: 1. Добавить поле recipes = models.ManyToManyField(Recipe,
-# through='IngredientInRecipe', related_name='ingredients') в модель
-# Ingredient.
-#
-# 2. Удалить или прокомментировать существующий код, который может
-# конфликтовать с новым отношением, если такой есть.
-# Это позволит вам получать доступ к рецептам, связанным с конкретным
-# ингредиентом, через атрибут recipes.
-
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
@@ -212,13 +190,6 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Продукты')
     def view_ingredients(self, recipe):
-        # components = [
-        #     (
-        #         f'{ingr.ingredient.name} {ingr.amount} '
-        #         f'{ingr.ingredient.measurement_unit}'
-        #     ) for ingr in recipe.ingredients_in_recipe.all()
-        # ]
-        # return '<br>'.join(components)
         return '<br>'.join(
             (
                 f'{ingr.ingredient.name} {ingr.amount} '

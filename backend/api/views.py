@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.http import (
     FileResponse, HttpResponseBadRequest, HttpResponseNotFound
@@ -9,7 +8,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -32,7 +30,7 @@ from recipes.models import (
 class ExtendedUserViewSet(UserViewSet):
     """Расширение вьюсета пользователя djoser для работы с подпиской."""
 
-    permission_classes = [IsAuthorOrReadOnly]  # , AllowAny,
+    permission_classes = [IsAuthorOrReadOnly]
 
     @action(["get", "put", "patch", "delete"], detail=False,
             permission_classes=[IsAuthenticated])
@@ -53,21 +51,11 @@ class ExtendedUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=kwargs['id'])
         if author == user:
             return HttpResponseBadRequest('Запрещена подписка на себя.')
-            # raise APIException(
-            #     "Запрещена подписка на себя.",
-            #     code=status.HTTP_400_BAD_REQUEST
-            # )
-            # raise ValidationError('Запрещена подписка на себя.')
         _, created = Subscribe.objects.get_or_create(
             user=user, subscribed=author
         )
         if not created:
             return HttpResponseBadRequest(f'Подписка на {author} уже есть.')
-            # raise APIException(
-            #     f'Подписка на {author} уже есть.',
-            #     code=status.HTTP_400_BAD_REQUEST
-            # )
-            # raise ValidationError(f'Подписка на {author} уже есть.')
         return Response(
             SubscribeUserSerializer(
                 author,
@@ -152,7 +140,6 @@ class RecipeViewSet(ModelViewSet):
 
     def add_recipe_mark(self, recipe_id, model):
         """Добавляем к рецепту отметку избранное/корзина."""
-        # user = self.request.user
         recipe = get_object_or_404(Recipe, id=recipe_id)
         mark, created = model.objects.get_or_create(
             user=self.request.user, recipe=recipe
@@ -168,7 +155,6 @@ class RecipeViewSet(ModelViewSet):
         )
 
     def delete_recipe_mark(self, recipe_id, model):
-        # user = self.request.user
         get_object_or_404(
             model,
             user=self.request.user,

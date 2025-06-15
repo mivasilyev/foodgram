@@ -1,10 +1,6 @@
-import json
-
-from collections import Counter, OrderedDict
-from itertools import groupby
+from collections import Counter
 
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -123,31 +119,13 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
     """Базовый сериализатор рецептов."""
 
     author = ExtendedUserSerializer(read_only=True)
-    # is_favorited = serializers.SerializerMethodField()
-    # is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = [
             'id', 'tags', 'author', 'name', 'image', 'text',
-            'cooking_time',  # 'is_favorited', 'is_in_shopping_cart'
+            'cooking_time',
         ]
-
-    # def get_mark(self, recipe, model):
-    #     request = self.context.get('request')
-    #     return (
-    #         request
-    #         and request.user.is_authenticated
-    #         and model.objects.filter(
-    #             user=request.user, recipe=recipe
-    #         ).exists()
-    #     )
-
-    # def get_is_favorited(self, recipe):
-    #     return self.get_mark(recipe, Favorite)
-
-    # def get_is_in_shopping_cart(self, recipe):
-    #     return self.get_mark(recipe, ShoppingCart)
 
 
 class GetRecipeSerializer(BaseRecipeSerializer):
@@ -201,18 +179,10 @@ class WriteRecipeSerializer(BaseRecipeSerializer):
             raise serializers.ValidationError(
                 f'Поле "{name}" не должно быть пустым.'
             )
-        # Составляем список дублирующихся элементов в data.
-        # if isinstance(data[0], OrderedDict):
-        #     data_check = [el['id'] for el in data]
-        # else:
-        #     data_check = data
         counts = Counter(data)
         duplicates = [
             el for el, count in counts.items() if count > 1
         ]
-        # duplicates = [
-        #     el for el, group in groupby(data) if len(list(group)) > 1
-        # ]
         if duplicates:
             raise serializers.ValidationError(
                 f'В рецепте повторяются {name}: {duplicates}.'
@@ -220,23 +190,14 @@ class WriteRecipeSerializer(BaseRecipeSerializer):
         return data
 
     def validate_ingredients(self, ingredients):
-        # print('=====', ingredients)
         self.check_data([el['id'] for el in ingredients], 'продукты')
-        # return self.check_data(ingredients, 'продукты')
         return ingredients
 
     def validate_tags(self, tags):
         return self.check_data(tags, 'теги')
 
-    # def validate_image(self, value):
-    #     if value is None:
-    #         raise serializers.ValidationError(
-    #             'В рецепте должна быть картинка.'
-    #         )
-    #     return value
 
     def validate(self, data):
-        # if 'image' not in data:
         if data['image'] is None:
             raise serializers.ValidationError(
                 'В рецепте должна быть картинка.'
@@ -245,10 +206,6 @@ class WriteRecipeSerializer(BaseRecipeSerializer):
             raise serializers.ValidationError(
                 'В рецепте должны быть теги.'
             )
-        # if 'ingredients_in_recipe' not in data:
-        #     raise serializers.ValidationError(
-        #         'В рецепте должны быть продукты.'
-        #     )
         return data
 
     def fill_ingredients(self, recipe, ingredients):

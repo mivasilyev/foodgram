@@ -20,7 +20,3 @@ MIN_COOKING_MINUTES = 1
 MIN_INGREDIENT_AMOUNT = 1
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'
-
-# # Файлы с заполнением БД.
-# INGREDIENTS = 'ingredients.csv'
-# TAGS = 'tags.csv'
