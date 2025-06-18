@@ -38,7 +38,7 @@ sudo docker exec foodgram-backend cp -r /app/static/. /backend_static/static/
 sudo docker exec foodgram-backend cp -r /app/docs/. /backend_static/docs/
 
 ```
-Выполнить импорт json-фикстур с продуктами и тегами
+Выполнить импорт json-фикстур с тегами и продуктами
 ```
 sudo docker exec foodgram-backend python manage.py load_tags
 sudo docker exec foodgram-backend python manage.py load_ingredients
