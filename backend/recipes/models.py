@@ -129,7 +129,7 @@ class Ingredient(models.Model):
         ]
 
     def __str__(self):
-        return self.name
+        return f'{self.name} ({self.measurement_unit})'
 
 
 class Recipe(models.Model):
@@ -149,7 +149,7 @@ class Recipe(models.Model):
     text = models.TextField(verbose_name='Описание')
     tags = models.ManyToManyField(Tag, verbose_name='Список тегов')
     cooking_time = models.SmallIntegerField(
-        verbose_name='Время приготовления (в минутах)',
+        verbose_name='Время (мин)',
         validators=[MinValueValidator(MIN_COOKING_MINUTES)]
     )
     pub_date = models.DateTimeField(

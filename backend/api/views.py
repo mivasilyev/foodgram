@@ -68,8 +68,7 @@ class ExtendedUserViewSet(UserViewSet):
     @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
         """Список юзеров, на которых подписан автор запроса, (с рецептами)."""
-        user = self.request.user
-        queryset = User.objects.filter(follows__user=user)
+        queryset = User.objects.filter(authors__user=self.request.user)
         page = self.paginate_queryset(queryset)
         return self.get_paginated_response(
             SubscribeUserSerializer(
@@ -125,7 +124,6 @@ class RecipeViewSet(ModelViewSet):
     """Вьюсет рецептов."""
 
     queryset = Recipe.objects.all()
-    serializer_class = WriteRecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -182,12 +180,15 @@ class RecipeViewSet(ModelViewSet):
     def get_link(self, request, pk):
         """Получение короткой ссылки."""
         if Recipe.objects.filter(id=pk).exists():
-            url = reverse('recipes:short_link', args=[pk])
             return Response(
-                {'short-link': request.build_absolute_uri(url)},
+                {'short-link': request.build_absolute_uri(
+                    reverse('recipes:short_link', args=[pk])
+                )},
                 status=status.HTTP_200_OK
             )
-        return HttpResponseNotFound('Запрошенного рецепта не существует.')
+        return HttpResponseNotFound(
+            f'Запрошенного рецепта {pk} не существует.'
+        )
 
     @action(methods=["get"], detail=False)
     def download_shopping_cart(self, request):

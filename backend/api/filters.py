@@ -33,13 +33,13 @@ class RecipeFilter(FilterSet):
     )
 
     def filter_is_favorited(self, recipes, name, value):
-        if value:
-            return recipes.filter(favorites__user__isnull=False)
+        if value and self.request.user.is_authenticated:
+            return recipes.filter(favorites__user=self.request.user)
         return recipes
 
     def filter_is_in_shopping_cart(self, recipes, name, value):
-        if value:
-            return recipes.filter(shoppingcarts__user__isnull=False)
+        if value and self.request.user.is_authenticated:
+            return recipes.filter(shoppingcarts__user=self.request.user)
         return recipes
 
     class Meta:

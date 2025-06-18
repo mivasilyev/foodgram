@@ -43,9 +43,9 @@ sudo docker exec foodgram-backend cp -r /app/docs/. /backend_static/docs/
 sudo docker exec foodgram-backend python manage.py load_tags
 sudo docker exec foodgram-backend python manage.py load_ingredients
 ```
-После запуска проект доступен [здесь](http://localhost/), [админ-зона](http://localhost/admin/), [документация к API](http://localhost/docs/).
+После запуска проект доступен [здесь](http://localhost/), [админ-зона](http://localhost/admin/), [документация к API](http://localhost/api/docs/).
 
-[Деплой на](https://foodg.run.place/), [админ-зона](https://foodg.run.place/admin/), [документация](https://foodg.run.place/docs/).
+[Деплой на](https://foodg.run.place/), [админ-зона](https://foodg.run.place/admin/), [документация](https://foodg.run.place/api/docs/).
 
 ## Использованные технологии
 

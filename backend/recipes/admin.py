@@ -45,7 +45,7 @@ class RecipeFilter(BaseFilter):
 
 class FollowsFilter(BaseFilter):
 
-    title = 'Пользователь подписан'
+    title = 'Есть подписки'
     parameter_name = 'follows'
     selections = (
         ('0', 'Нет подписок'),
@@ -83,6 +83,13 @@ class FoodgramUserAdmin(UserAdmin, RecipesCountMixin):
         'subscribed_count', 'authors_count'
     ]
     list_display_links = ('username', )
+    fieldsets = (
+        (('Пользователь'), {'fields': (
+            'username', 'avatar', 'first_name', 'last_name', 'email'
+        )}),
+        (('Статус'), {'fields': ('is_active', 'is_staff', 'is_superuser'), }),
+        (('Даты'), {'fields': ('last_login', 'date_joined')}),
+    )
     readonly_fields = ['avatar_preview']
     search_fields = ('email', 'username')
     list_filter = UserAdmin.list_filter + (

@@ -18,6 +18,7 @@ class CommonCommand(BaseCommand):
         file_name = f'{self.model.__name__.lower()}s.json'
         file_path = f'{settings.BASE_DIR}/{file_name}'
         try:
+            initial_count = self.model.objects.count()
             with open(file_path, 'r', encoding='utf-8') as jsonfile:
                 data = json.load(jsonfile)
                 self.model.objects.bulk_create(
@@ -26,8 +27,8 @@ class CommonCommand(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Файл {file_name} загружен. '
-                        f'Добавлено {len(data)} записей.'
+                        f'Файл {file_name} загружен. Добавлено записей: '
+                        f'{self.model.objects.count() - initial_count}.'
                     )
                 )
         except Exception as error:

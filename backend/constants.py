@@ -18,5 +18,10 @@ DEFAULT_USER_AVATAR = f'{AVATARS_URL}/default_user_avatar.jpg'
 MIN_COOKING_MINUTES = 1
 # Минимальное количество ингредиента.
 MIN_INGREDIENT_AMOUNT = 1
+
 # Имя файла для выгрузки списка покупок продуктов.
 SHOPPING_CART_FILENAME = 'shopping_cart.txt'
+# Заготовки для форматирования вывода списка покупок.
+header_layout = 'СПИСОК ПОКУПОК (составлен {})'
+products_layout = "{}. {} ({}) - {}"
+recipes_layout = "{} @{}"
