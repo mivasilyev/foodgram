@@ -179,7 +179,6 @@ class WriteRecipeSerializer(BaseRecipeSerializer):
             raise serializers.ValidationError(
                 f'Поле "{name}" не должно быть пустым.'
             )
-        # counts = Counter(data)
         duplicates = [
             el for el, count in Counter(data).items() if count > 1
         ]
